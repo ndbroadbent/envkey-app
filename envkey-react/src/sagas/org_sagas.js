@@ -1,5 +1,5 @@
-import { takeLatest, take, put, select, call} from 'redux-saga/effects'
-import {delay} from 'redux-saga'
+import { takeLatest, take, put, select, call } from 'redux-saga/effects'
+import { delay } from 'redux-saga'
 import { push } from 'react-router-redux'
 import R from 'ramda'
 import {
@@ -7,14 +7,13 @@ import {
   envParamsForUpdateOrgRole,
   dispatchDecryptAllIfNeeded,
   redirectFromOrgIndexIfNeeded,
-  execUpdateTrustedPubkeys
+  execUpdateTrustedPubkeys,
 } from './helpers'
 import {
   UPDATE_ORG_ROLE,
   UPDATE_ORG_ROLE_REQUEST,
   UPDATE_ORG_ROLE_SUCCESS,
   UPDATE_ORG_ROLE_FAILED,
-
   UPDATE_ORG_OWNER_REQUEST,
   UPDATE_ORG_OWNER_SUCCESS,
   UPDATE_ORG_OWNER_FAILED,
@@ -22,135 +21,134 @@ import {
   // REMOVE_SELF_FROM_ORG,
   // REMOVE_SELF_FROM_ORG_FAILED,
   // REMOVE_SELF_FROM_ORG_SUCCESS,
-
   CREATE_ORG_REQUEST,
   CREATE_ORG_SUCCESS,
   CREATE_ORG_FAILED,
-
   SOCKET_SUBSCRIBE_ORG_CHANNEL,
   FETCH_CURRENT_USER_UPDATES_API_SUCCESS,
   FETCH_CURRENT_USER_UPDATES_SUCCESS,
-
   REMOVE_OBJECT_SUCCESS,
   REMOVE_OBJECT_FAILED,
-
   GENERATE_DEMO_ORG_REQUEST,
   GENERATE_DEMO_ORG_SUCCESS,
   GENERATE_DEMO_ORG_FAILED,
-
   updateOrgRoleRequest,
   updateOrgOwner,
   addTrustedPubkey,
   removeObject,
-  fetchCurrentUserUpdates
+  fetchCurrentUserUpdates,
 } from 'actions'
 import { getCurrentOrg, getCurrentUser, getOrgUserForUser } from 'selectors'
 
-const
-  onUpdateOrgRoleRequest = apiSaga({
+const onUpdateOrgRoleRequest = apiSaga({
     authenticated: true,
-    method: "post",
+    method: 'post',
     actionTypes: [UPDATE_ORG_ROLE_SUCCESS, UPDATE_ORG_ROLE_FAILED],
-    urlFn: (action)=> `/org_users.json`
+    urlFn: action => `/org_users.json`,
   }),
-
   onCreateOrgRequest = apiSaga({
     authenticated: true,
-    method: "post",
+    method: 'post',
     actionTypes: [CREATE_ORG_SUCCESS, CREATE_ORG_FAILED],
-    urlFn: (action)=> `/orgs.json`
+    urlFn: action => `/orgs.json`,
   }),
-
   onUpdateOrgOwnerRequest = apiSaga({
     authenticated: true,
-    method: "patch",
+    method: 'patch',
     urlSelector: getCurrentOrg,
     actionTypes: [UPDATE_ORG_OWNER_SUCCESS, UPDATE_ORG_OWNER_FAILED],
-    urlFn: (action, currentOrg)=> `/orgs/${currentOrg.slug}/update_owner.json`
+    urlFn: (action, currentOrg) => `/orgs/${currentOrg.slug}/update_owner.json`,
   }),
-
   onGenerateDemoOrgRequest = apiSaga({
     authenticated: false,
-    method: "post",
+    method: 'post',
     minDelay: 1200,
     actionTypes: [GENERATE_DEMO_ORG_SUCCESS, GENERATE_DEMO_ORG_FAILED],
-    urlFn: (action)=> "/orgs/generate_demo_org.json"
+    urlFn: action => '/orgs/generate_demo_org.json',
   })
 
-function *onUpdateOrgRole({payload: {role, userId, orgUserId}}){
+function* onUpdateOrgRole({ payload: { role, userId, orgUserId } }) {
   yield put(fetchCurrentUserUpdates())
   yield take(FETCH_CURRENT_USER_UPDATES_SUCCESS)
-  const envs = yield call(envParamsForUpdateOrgRole, {userId, role})
-  yield put(updateOrgRoleRequest({envs, role, userId, orgUserId}))
+  const envs = yield call(envParamsForUpdateOrgRole, { userId, role })
+  yield put(updateOrgRoleRequest({ envs, role, userId, orgUserId }))
 }
 
-function *onCreateOrgSuccess(action){
+function* onCreateOrgSuccess(action) {
   const currentOrg = yield select(getCurrentOrg),
-        currentUser = yield select(getCurrentUser)
+    currentUser = yield select(getCurrentUser)
 
-  yield put(addTrustedPubkey({keyable: {type: "user", ...currentUser}, orgId: currentOrg.id}))
+  yield put(
+    addTrustedPubkey({
+      keyable: { type: 'user', ...currentUser },
+      orgId: currentOrg.id,
+    })
+  )
 
   yield call(dispatchDecryptAllIfNeeded)
 
   const updateTrustedRes = yield call(execUpdateTrustedPubkeys, currentOrg.slug)
-  if (!updateTrustedRes.error){
+  if (!updateTrustedRes.error) {
     yield put(push(`/${currentOrg.slug}`))
-    yield put({type: SOCKET_SUBSCRIBE_ORG_CHANNEL})
+    yield put({ type: SOCKET_SUBSCRIBE_ORG_CHANNEL })
     yield call(redirectFromOrgIndexIfNeeded)
-    var overlay = document.getElementById("preloader-overlay")
-    if(!overlay.className.includes("hide")){
-      overlay.className += " hide"
+    var overlay = document.getElementById('preloader-overlay')
+    if (!overlay.className.includes('hide')) {
+      overlay.className += ' hide'
     }
-    document.body.className = document.body.className.replace("no-scroll","")
-                                                     .replace("preloader-authenticate","")
-
+    document.body.className = document.body.className
+      .replace('no-scroll', '')
+      .replace('preloader-authenticate', '')
   }
 }
 
-function *onRemoveSelfFromOrg(action){
+function* onRemoveSelfFromOrg(action) {
   const currentUser = yield select(getCurrentUser),
-        orgUser = yield select(getOrgUserForUser(currentUser.id))
+    orgUser = yield select(getOrgUserForUser(currentUser.id))
 
   let err
 
-  if (currentUser.role == "org_owner"){
-    const {newOwnerId} = action.meta
-    yield put(updateOrgOwner({newOwnerId}))
-    const updateOwnerRes = yield take([UPDATE_ORG_OWNER_SUCCESS, UPDATE_ORG_OWNER_FAILED])
+  if (currentUser.role == 'org_owner') {
+    const { newOwnerId } = action.meta
+    yield put(updateOrgOwner({ newOwnerId }))
+    const updateOwnerRes = yield take([
+      UPDATE_ORG_OWNER_SUCCESS,
+      UPDATE_ORG_OWNER_FAILED,
+    ])
 
-    if (updateOwnerRes.error){
+    if (updateOwnerRes.error) {
       err = updateOwnerRes.payload
     }
   }
 
-  if (!err){
-    yield put(removeObject({objectType: "orgUser", targetId: orgUser.id}))
+  if (!err) {
+    yield put(removeObject({ objectType: 'orgUser', targetId: orgUser.id }))
     const removeRes = yield take([REMOVE_OBJECT_SUCCESS, REMOVE_OBJECT_FAILED])
-    if (removeRes.error){
+    if (removeRes.error) {
       err = removeRes.payload
     }
   }
 
-  if (err){
-    yield put({type: REMOVE_SELF_FROM_ORG_FAILED, payload: err, error: true})
+  if (err) {
+    yield put({ type: REMOVE_SELF_FROM_ORG_FAILED, payload: err, error: true })
   } else {
-    yield put({type: REMOVE_SELF_FROM_ORG_SUCCESS})
+    yield put({ type: REMOVE_SELF_FROM_ORG_SUCCESS })
   }
 }
 
-function *onUpdateOrgOwnerSuccess(action){
+function* onUpdateOrgOwnerSuccess(action) {
   const currentOrg = yield select(getCurrentOrg)
-  yield put(fetchCurrentUserUpdates({noMinUpdatedAt: true}))
+  yield put(fetchCurrentUserUpdates({ noMinUpdatedAt: true }))
   yield take(FETCH_CURRENT_USER_UPDATES_API_SUCCESS)
   yield put(push(`/${currentOrg.slug}`))
   yield call(redirectFromOrgIndexIfNeeded)
 }
 
-function *onGenerateDemoOrgSuccess({payload: {path}}){
+function* onGenerateDemoOrgSuccess({ payload: { path } }) {
   yield put(push(path))
 }
 
-export default function* orgSagas(){
+export default function* orgSagas() {
   yield [
     takeLatest(UPDATE_ORG_ROLE, onUpdateOrgRole),
     takeLatest(UPDATE_ORG_ROLE_REQUEST, onUpdateOrgRoleRequest),
@@ -159,8 +157,7 @@ export default function* orgSagas(){
     takeLatest(UPDATE_ORG_OWNER_REQUEST, onUpdateOrgOwnerRequest),
     takeLatest(UPDATE_ORG_OWNER_SUCCESS, onUpdateOrgOwnerSuccess),
     takeLatest(GENERATE_DEMO_ORG_REQUEST, onGenerateDemoOrgRequest),
-    takeLatest(GENERATE_DEMO_ORG_SUCCESS, onGenerateDemoOrgSuccess)
+    takeLatest(GENERATE_DEMO_ORG_SUCCESS, onGenerateDemoOrgSuccess),
     // takeLatest(REMOVE_SELF_FROM_ORG, onRemoveSelfFromOrg)
   ]
 }
-

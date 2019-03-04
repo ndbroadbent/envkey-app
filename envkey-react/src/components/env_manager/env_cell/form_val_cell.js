@@ -1,4 +1,4 @@
-import h from "lib/ui/hyperscript_with_helpers"
+import h from 'lib/ui/hyperscript_with_helpers'
 import R from 'ramda'
 import EditableValCell from './editable_val_cell'
 import Autocompletable from './traits/autocompletable'
@@ -12,22 +12,20 @@ const BaseClass = R.pipe(
 )(EditableValCell)
 
 export default class FormValCell extends BaseClass {
-
-  _formCellPlaceholder(){
+  _formCellPlaceholder() {
     return h.small([
       `Set ${this.props.environmentLabel || this.props.environment} value`,
-      h.em(".optional", "(optional)")
+      h.em('.optional', '(optional)'),
     ])
   }
 
-  _undefinedVal(){
-    return this.props.didCommit ?
-      super._undefinedVal() :
-      this._formCellPlaceholder()
+  _undefinedVal() {
+    return this.props.didCommit
+      ? super._undefinedVal()
+      : this._formCellPlaceholder()
   }
 
-  _commit(update){
+  _commit(update) {
     super._commit(update)
   }
-
 }

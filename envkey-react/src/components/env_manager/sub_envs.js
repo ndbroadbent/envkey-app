@@ -1,5 +1,5 @@
 import React from 'react'
-import h from "lib/ui/hyperscript_with_helpers"
+import h from 'lib/ui/hyperscript_with_helpers'
 import R from 'ramda'
 import LabelRow from './label_row'
 import SubEnvForm from './sub_env_form'
@@ -7,134 +7,142 @@ import SubEnvsList from './sub_envs_list'
 import SubEnvGrid from './sub_env_grid'
 
 const envWithMeta = props => props.envsWithMeta[props.environment],
-
-      subEnvs = props => envWithMeta(props)["@@__sub__"] || {}
+  subEnvs = props => envWithMeta(props)['@@__sub__'] || {}
 
 export default class SubEnvs extends React.Component {
-  constructor(props){
+  constructor(props) {
     super(props)
   }
 
-  _defaultSelectedId(props){
-    return R.path([0, "@@__id__"], this._sortedSubEnvs(props || this.props))
+  _defaultSelectedId(props) {
+    return R.path([0, '@@__id__'], this._sortedSubEnvs(props || this.props))
   }
 
-  _selected(props){
+  _selected(props) {
     const sel = (props || this.props).params.sel
-    if (sel == "first"){
+    if (sel == 'first') {
       return this._defaultSelectedId(props)
-    } else if (sel == "add") {
+    } else if (sel == 'add') {
       return null
     } else {
       return sel
     }
   }
 
-  _isAddingSubEnv(props){
-    return (props || this.props).params.sel == "add"
+  _isAddingSubEnv(props) {
+    return (props || this.props).params.sel == 'add'
   }
 
-  _envWithMeta(){
+  _envWithMeta() {
     return envsWithMeta(this.props)
   }
 
-  _subEnvs(props){
+  _subEnvs(props) {
     return subEnvs(props || this.props)
   }
 
-  _sortedSubEnvs(props){
+  _sortedSubEnvs(props) {
     const obj = this._subEnvs(props)
-    if (R.isEmpty(obj))return []
+    if (R.isEmpty(obj)) return []
     return R.pipe(
       R.toPairs,
-      R.map(([id, subEnv])=> ({...subEnv, "@@__id__": id})),
-      R.sort(R.ascend(
-        R.pipe(R.prop("@@__name__"), R.toLower)
-      ))
+      R.map(([id, subEnv]) => ({ ...subEnv, '@@__id__': id })),
+      R.sort(
+        R.ascend(
+          R.pipe(
+            R.prop('@@__name__'),
+            R.toLower
+          )
+        )
+      )
     )(obj)
   }
 
-  _selectedSubEnv(){
-    if(!this._selected())return null
+  _selectedSubEnv() {
+    if (!this._selected()) return null
     const subEnv = this._subEnvs()[this._selected()]
-    return {...subEnv, "@@__id__": this._selected()}
+    return { ...subEnv, '@@__id__': this._selected() }
   }
 
-  _addSubEnv(params){
-    this.setState({addedSubEnv: true}, ()=> this.props.addSubEnv(params))
+  _addSubEnv(params) {
+    this.setState({ addedSubEnv: true }, () => this.props.addSubEnv(params))
   }
 
-  _classNames(){
+  _classNames() {
     return [this.props.environment]
   }
 
-  render(){
-    return h.div(".sub-envs", {className: this._classNames().join(" ")}, [
+  render() {
+    return h.div('.sub-envs', { className: this._classNames().join(' ') }, [
       this._renderLabelRow(),
-      this._renderContent()
+      this._renderContent(),
     ])
   }
 
-  _renderLabelRow(){
+  _renderLabelRow() {
     return h(LabelRow, {
       ...this.props,
       isSubEnvsLabel: true,
       environments: [this.props.environment],
-      subEnv: this._selectedSubEnv()
+      subEnv: this._selectedSubEnv(),
     })
   }
 
-  _renderContent(){
-    const content = R.isEmpty(this._subEnvs()) ?
-      [this._renderPlaceholder()] :
-      [this._renderList(), this._renderSelected()]
+  _renderContent() {
+    const content = R.isEmpty(this._subEnvs())
+      ? [this._renderPlaceholder()]
+      : [this._renderList(), this._renderSelected()]
 
-    return h.div(".content", content)
+    return h.div('.content', content)
   }
 
-  _renderPlaceholder(){
-    return h.div(".placeholder", [
-      <p className="copy"><strong>Sub-environments</strong> allow for additional environments on top of Development, Staging, and Production by setting new variables and/or overriding existing ones.</p>,
+  _renderPlaceholder() {
+    return h.div('.placeholder', [
+      <p className="copy">
+        <strong>Sub-environments</strong> allow for additional environments on
+        top of Development, Staging, and Production by setting new variables
+        and/or overriding existing ones.
+      </p>,
 
-      this._renderSubEnvForm()
+      this._renderSubEnvForm(),
     ])
   }
 
-  _renderList(){
+  _renderList() {
     return h(SubEnvsList, {
       ...this.props,
       subEnvs: this._sortedSubEnvs(),
       selected: this._selected(),
       isReadOnly: this.props.subEnvsReadOnly,
-      isAddingSubEnv: this._isAddingSubEnv()
+      isAddingSubEnv: this._isAddingSubEnv(),
     })
   }
 
-  _renderSelected(){
+  _renderSelected() {
     return this._isAddingSubEnv() ? this._renderAddForm() : this._renderGrid()
   }
 
-  _renderAddForm(){
-    if (!this.props.subEnvsReadOnly){
-      return h.div(".add-sub-env-form", [this._renderSubEnvForm()])
+  _renderAddForm() {
+    if (!this.props.subEnvsReadOnly) {
+      return h.div('.add-sub-env-form', [this._renderSubEnvForm()])
     }
   }
 
-  _renderSubEnvForm(){
-    if(!this.props.subEnvsReadOnly){
+  _renderSubEnvForm() {
+    if (!this.props.subEnvsReadOnly) {
       return h(SubEnvForm, {
         ...this.props,
-        addSubEnv: ::this._addSubEnv
+        addSubEnv: ::this._addSubEnv,
       })
     }
   }
 
-  _renderGrid(){
-    if (this._selectedSubEnv()){
+  _renderGrid() {
+    if (this._selectedSubEnv()) {
       return h(SubEnvGrid, {
         ...this.props,
         isReadOnly: this.props.subEnvVarsReadOnly,
-        subEnv: this._selectedSubEnv()
+        subEnv: this._selectedSubEnv(),
       })
     }
   }

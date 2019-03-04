@@ -6,7 +6,7 @@ import {
   signTrustedPubkeyChain,
   inviteUser,
   execCreateAssoc,
-  attachAssocEnvs
+  attachAssocEnvs,
 } from './helpers'
 import {
   ADD_ASSOC_REQUEST,
@@ -36,15 +36,15 @@ import {
   generateKey,
   addTrustedPubkey,
   updateTrustedPubkeys,
-  fetchCurrentUserUpdates
-} from "actions"
+  fetchCurrentUserUpdates,
+} from 'actions'
 import {
   generateKeys,
   secureRandomAlphanumeric,
   encryptJson,
   signPublicKey,
   decryptPrivateKey,
-  getPubkeyFingerprint
+  getPubkeyFingerprint,
 } from 'lib/crypto'
 import {
   getCurrentOrg,
@@ -53,58 +53,62 @@ import {
   getLocalKey,
   getRawEnvWithPendingForApp,
   getPrivkey,
-  getApp
+  getApp,
 } from 'selectors'
-import {getAssocUrl} from 'lib/assoc/helpers'
+import { getAssocUrl } from 'lib/assoc/helpers'
 
-const
-  addRemoveAssocApiSaga = ({method, actionTypes})=> {
+const addRemoveAssocApiSaga = ({ method, actionTypes }) => {
     return apiSaga({
       method,
       actionTypes,
       authenticated: true,
-      urlFn: ({meta})=> {
-        const {targetId} = meta,
-              targetPath = targetId ? ('/' + targetId) : ''
+      urlFn: ({ meta }) => {
+        const { targetId } = meta,
+          targetPath = targetId ? '/' + targetId : ''
 
         return getAssocUrl(meta, targetPath)
-      }
+      },
     })
   },
-
   onGenerateKeyRequest = apiSaga({
     authenticated: true,
-    method: "patch",
+    method: 'patch',
     actionTypes: [GENERATE_ASSOC_KEY_SUCCESS, GENERATE_ASSOC_KEY_FAILED],
-    urlFn: ({meta})=> getAssocUrl(meta, `/${meta.targetId}/generate_key`)
+    urlFn: ({ meta }) => getAssocUrl(meta, `/${meta.targetId}/generate_key`),
   }),
-
   onRevokeKeyRequest = apiSaga({
     authenticated: true,
-    method: "delete",
+    method: 'delete',
     actionTypes: [REVOKE_ASSOC_KEY_SUCCESS, REVOKE_ASSOC_KEY_FAILED],
-    urlFn: ({meta})=> getAssocUrl(meta, `/${meta.targetId}/revoke_key`)
+    urlFn: ({ meta }) => getAssocUrl(meta, `/${meta.targetId}/revoke_key`),
   })
 
-
 let isPrefetchingUpdatesForAddAssoc = false
-function* onAddAssoc(action){
+function* onAddAssoc(action) {
   let apiAction
-  const {meta: {parentType, assocType, isCreatingAssoc, shouldPrefetchUpdates, parentId}} = action,
-        apiSaga = addRemoveAssocApiSaga({
-          method: "post",
-          actionTypes: [ADD_ASSOC_SUCCESS, ADD_ASSOC_FAILED]
-        })
+  const {
+      meta: {
+        parentType,
+        assocType,
+        isCreatingAssoc,
+        shouldPrefetchUpdates,
+        parentId,
+      },
+    } = action,
+    apiSaga = addRemoveAssocApiSaga({
+      method: 'post',
+      actionTypes: [ADD_ASSOC_SUCCESS, ADD_ASSOC_FAILED],
+    })
 
-  if(parentType == "app" && assocType == "user"){
-    if (shouldPrefetchUpdates){
+  if (parentType == 'app' && assocType == 'user') {
+    if (shouldPrefetchUpdates) {
       isPrefetchingUpdatesForAddAssoc = true
       yield put(fetchCurrentUserUpdates())
       yield take(FETCH_CURRENT_USER_UPDATES_SUCCESS)
       isPrefetchingUpdatesForAddAssoc = false
     }
 
-    while (isPrefetchingUpdatesForAddAssoc){
+    while (isPrefetchingUpdatesForAddAssoc) {
       yield call(delay, 50)
     }
 
@@ -116,112 +120,112 @@ function* onAddAssoc(action){
   yield call(apiSaga, apiAction)
 }
 
-function* onRemoveAssoc(action){
+function* onRemoveAssoc(action) {
   const apiSaga = addRemoveAssocApiSaga({
-          method: "delete",
-          actionTypes: [REMOVE_ASSOC_SUCCESS, REMOVE_ASSOC_FAILED]
-        })
+    method: 'delete',
+    actionTypes: [REMOVE_ASSOC_SUCCESS, REMOVE_ASSOC_FAILED],
+  })
 
   yield call(apiSaga, action)
 }
 
-function* onCreateAssoc(action){
-  const {meta} = action
-  if (meta.parentType == "app" && meta.assocType == "user"){
+function* onCreateAssoc(action) {
+  const { meta } = action
+  if (meta.parentType == 'app' && meta.assocType == 'user') {
     yield call(inviteUser, action)
   } else {
     yield call(execCreateAssoc, action)
   }
 }
 
-function* onAddAssocSuccess({meta, payload: {id: targetId}}){
-  const {parentType, assocType} = meta
+function* onAddAssocSuccess({ meta, payload: { id: targetId } }) {
+  const { parentType, assocType } = meta
 
-  if(parentType == "app" && ["server", "localKey"].includes(assocType) && !meta.skipKeygen){
-    yield put(generateKey({
-      ...meta, targetId
-    }))
+  if (
+    parentType == 'app' &&
+    ['server', 'localKey'].includes(assocType) &&
+    !meta.skipKeygen
+  ) {
+    yield put(
+      generateKey({
+        ...meta,
+        targetId,
+      })
+    )
   }
 }
 
-function* onGenerateKey(action){
+function* onGenerateKey(action) {
   yield put(fetchCurrentUserUpdates())
   yield take(FETCH_CURRENT_USER_UPDATES_SUCCESS)
 
-  const
-    currentOrg = yield select(getCurrentOrg),
-
-    {meta: {parent: app, assocType, targetId}} = action,
-
-    selector = {server: getServer, localKey: getLocalKey}[assocType],
-
+  const currentOrg = yield select(getCurrentOrg),
+    {
+      meta: { parent: app, assocType, targetId },
+    } = action,
+    selector = { server: getServer, localKey: getLocalKey }[assocType],
     target = yield select(selector(targetId)),
-
-    assocId = {server: targetId, localKey: targetId}[assocType],
-
-    environment = {server: target.role, localKey: "development"}[assocType],
-
+    assocId = { server: targetId, localKey: targetId }[assocType],
+    environment = { server: target.role, localKey: 'development' }[assocType],
     passphrase = secureRandomAlphanumeric(16),
-
     {
       privateKeyArmored: encryptedPrivkey,
-      publicKeyArmored: pubkey
+      publicKeyArmored: pubkey,
     } = yield call(generateKeys, {
-      email: ([currentOrg.slug, app.slug, target.slug].join("-") + "@envkey.com"),
-      passphrase
+      email: [currentOrg.slug, app.slug, target.slug].join('-') + '@envkey.com',
+      passphrase,
     }),
-
     decryptedPrivkey = yield decryptPrivateKey({
-      privkey: encryptedPrivkey, passphrase
+      privkey: encryptedPrivkey,
+      passphrase,
     }),
-
     currentUserPrivkey = yield select(getPrivkey),
-
-    signedPubkey = yield signPublicKey({pubkey, privkey: currentUserPrivkey}),
-
-    rawEnv = yield select(getRawEnvWithPendingForApp({appId: app.id, environment, subEnvId: target.subEnvId})),
-
-    [
-      encryptedRawEnv,
-      signedTrustedPubkeys,
-      signedByTrustedPubkeys
-    ] = yield [
-     encryptJson({
-       pubkey: signedPubkey,
-       privkey: currentUserPrivkey,
-       data: rawEnv
-     }),
-     call(signTrustedPubkeyChain, decryptedPrivkey),
-     call(signTrustedPubkeyChain)
+    signedPubkey = yield signPublicKey({ pubkey, privkey: currentUserPrivkey }),
+    rawEnv = yield select(
+      getRawEnvWithPendingForApp({
+        appId: app.id,
+        environment,
+        subEnvId: target.subEnvId,
+      })
+    ),
+    [encryptedRawEnv, signedTrustedPubkeys, signedByTrustedPubkeys] = yield [
+      encryptJson({
+        pubkey: signedPubkey,
+        privkey: currentUserPrivkey,
+        data: rawEnv,
+      }),
+      call(signTrustedPubkeyChain, decryptedPrivkey),
+      call(signTrustedPubkeyChain),
     ]
 
-  yield put(generateKeyRequest({
-    ...action.meta,
-    assocId,
-    encryptedPrivkey,
-    encryptedRawEnv,
-    passphrase,
-    signedTrustedPubkeys,
-    signedByTrustedPubkeys,
-    pubkey: signedPubkey,
-    pubkeyFingerprint: getPubkeyFingerprint(signedPubkey)
-  }))
+  yield put(
+    generateKeyRequest({
+      ...action.meta,
+      assocId,
+      encryptedPrivkey,
+      encryptedRawEnv,
+      passphrase,
+      signedTrustedPubkeys,
+      signedByTrustedPubkeys,
+      pubkey: signedPubkey,
+      pubkeyFingerprint: getPubkeyFingerprint(signedPubkey),
+    })
+  )
 }
 
-function *onGenerateKeySuccess({meta: {assocType, targetId}}){
-  const
-    {id: orgId} = yield select(getCurrentOrg),
-
-    selector = {server: getServer, localKey: getLocalKey}[assocType],
-
+function* onGenerateKeySuccess({ meta: { assocType, targetId } }) {
+  const { id: orgId } = yield select(getCurrentOrg),
+    selector = { server: getServer, localKey: getLocalKey }[assocType],
     target = yield select(selector(targetId))
 
-  yield put(addTrustedPubkey({keyable: {type: assocType, ...target}, orgId}))
+  yield put(
+    addTrustedPubkey({ keyable: { type: assocType, ...target }, orgId })
+  )
 
   yield put(updateTrustedPubkeys())
 }
 
-export default function* assocSagas(){
+export default function* assocSagas() {
   yield [
     takeEvery(ADD_ASSOC_REQUEST, onAddAssoc),
     takeEvery(REMOVE_ASSOC_REQUEST, onRemoveAssoc),
@@ -230,6 +234,6 @@ export default function* assocSagas(){
     takeEvery(GENERATE_ASSOC_KEY, onGenerateKey),
     takeEvery(GENERATE_ASSOC_KEY_REQUEST, onGenerateKeyRequest),
     takeEvery(GENERATE_ASSOC_KEY_SUCCESS, onGenerateKeySuccess),
-    takeEvery(REVOKE_ASSOC_KEY_REQUEST, onRevokeKeyRequest)
+    takeEvery(REVOKE_ASSOC_KEY_REQUEST, onRevokeKeyRequest),
   ]
 }

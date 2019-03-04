@@ -1,5 +1,5 @@
 import R from 'ramda'
-import h from "lib/ui/hyperscript_with_helpers"
+import h from 'lib/ui/hyperscript_with_helpers'
 import EditableValCell from './editable_val_cell'
 import Removable from './traits/removable'
 import Autocompletable from './traits/autocompletable'
@@ -18,25 +18,23 @@ const EnvValCellBaseClass = R.pipe(
 )(EditableValCell)
 
 export default class EnvValCell extends EnvValCellBaseClass {
-  _commit(update){
+  _commit(update) {
     this.props.onCommitEntryVal(
       this.props.entryKey,
       this.props.environment,
-      (update || {val: this.state.inputVal})
+      update || { val: this.state.inputVal }
     )
   }
 
-  _shouldConfirm(){
+  _shouldConfirm() {
     return Boolean(this.props.val)
   }
 
-  _confirmText(){
-    return "Delete value?"
+  _confirmText() {
+    return 'Delete value?'
   }
 
-  _confirmButtonLabel(){
-    return "Delete"
+  _confirmButtonLabel() {
+    return 'Delete'
   }
-
-
 }

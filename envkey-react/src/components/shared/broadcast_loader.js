@@ -51,7 +51,11 @@ const svgString = `<?xml version="1.0" encoding="utf-8"?>
   </g>
 </svg>`
 
-export default function (){
-  return <span className="broadcast-loader"
-               dangerouslySetInnerHTML={{ __html: svgString }} />
+export default function() {
+  return (
+    <span
+      className="broadcast-loader"
+      dangerouslySetInnerHTML={{ __html: svgString }}
+    />
+  )
 }

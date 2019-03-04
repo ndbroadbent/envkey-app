@@ -7,9 +7,4 @@ import * as auth from './auth_middleware'
 export default R.pipe(
   R.map(R.values),
   R.flatten
-)([
-  env,
-  fetchCurrentUser,
-  auth
-])
-
+)([env, fetchCurrentUser, auth])

@@ -1,65 +1,74 @@
 import React from 'react'
 import R from 'ramda'
-import h from "lib/ui/hyperscript_with_helpers"
+import h from 'lib/ui/hyperscript_with_helpers'
 import EnvHeader from './env_header'
 import EnvGrid from './env_grid'
 import SubEnvs from './sub_envs'
-import {AddAssoc} from 'components/assoc_manager'
+import { AddAssoc } from 'components/assoc_manager'
 import SmallLoader from 'components/shared/small_loader'
 import Filter from 'components/shared/filter'
 import { allEntries, hasAnyVal } from 'lib/env/query'
 import traversty from 'traversty'
 
-const subEnvsReadOnly = props => props.app.role == "development",
-
-      subEnvVarsReadOnly = props => props.app.role == "development" && props.environment == "production"
+const subEnvsReadOnly = props => props.app.role == 'development',
+  subEnvVarsReadOnly = props =>
+    props.app.role == 'development' && props.environment == 'production'
 
 export default class EnvManager extends React.Component {
-
-  constructor(props){
+  constructor(props) {
     super(props)
     this.state = {
       hideValues: true,
-      filter: "",
+      filter: '',
       showFilter: false,
       lastSocketUserUpdatingEnvs: null,
       showSocketUpdating: false,
       editingMultilineEnvironment: null,
       editingMultilineEntryKey: null,
       autocompleteOpenEntryKey: null,
-      autocompleteOpenEnvironment: null
+      autocompleteOpenEnvironment: null,
     }
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.socketUserUpdatingEnvs){
+    if (nextProps.socketUserUpdatingEnvs) {
       this._clearSocketUpdatingTimeout()
-      this.setState({showSocketUpdating: true})
+      this.setState({ showSocketUpdating: true })
     }
 
-    if(nextProps.socketUserUpdatingEnvs &&
-       nextProps.socketUserUpdatingEnvs != this.state.lastSocketUserUpdatingEnvs){
-      this.setState({lastSocketUserUpdatingEnvs: nextProps.socketUserUpdatingEnvs})
+    if (
+      nextProps.socketUserUpdatingEnvs &&
+      nextProps.socketUserUpdatingEnvs != this.state.lastSocketUserUpdatingEnvs
+    ) {
+      this.setState({
+        lastSocketUserUpdatingEnvs: nextProps.socketUserUpdatingEnvs,
+      })
     }
 
-    if (this.props.socketUserUpdatingEnvs && !nextProps.socketUserUpdatingEnvs){
+    if (
+      this.props.socketUserUpdatingEnvs &&
+      !nextProps.socketUserUpdatingEnvs
+    ) {
       this._clearSocketUpdatingTimeout()
-      this.socketUpdatingTimeout = setTimeout(()=>{
-        this.setState({showSocketUpdating: false})
+      this.socketUpdatingTimeout = setTimeout(() => {
+        this.setState({ showSocketUpdating: false })
       }, 2000)
     }
 
-    if (R.path(["parent", "id"], this.props) != R.path(["parent", "id"], nextProps) ||
-        this._subEnvsOpen(this.props) != this._subEnvsOpen(nextProps) ||
-        (this._subEnvsOpen() && this.props.params.sel != nextProps.params.sel)){
-      this.setState({showFilter: false, filter: ""})
+    if (
+      R.path(['parent', 'id'], this.props) !=
+        R.path(['parent', 'id'], nextProps) ||
+      this._subEnvsOpen(this.props) != this._subEnvsOpen(nextProps) ||
+      (this._subEnvsOpen() && this.props.params.sel != nextProps.params.sel)
+    ) {
+      this.setState({ showFilter: false, filter: '' })
     }
   }
 
-  _onToggleFilter(){
-    this.setState({filter: "", showFilter: !this.state.showFilter}, ()=>{
-      const input = traversty(".environments .filter input")[0]
-      if(this.state.showFilter){
+  _onToggleFilter() {
+    this.setState({ filter: '', showFilter: !this.state.showFilter }, () => {
+      const input = traversty('.environments .filter input')[0]
+      if (this.state.showFilter) {
         input.focus()
       } else {
         input.blur()
@@ -67,207 +76,236 @@ export default class EnvManager extends React.Component {
     })
   }
 
-  _onEditCell(params = {}){
-    const {entryKey, environment, subEnvId, isMultiline, isEntryForm, autocompleteOpen} = params
+  _onEditCell(params = {}) {
+    const {
+      entryKey,
+      environment,
+      subEnvId,
+      isMultiline,
+      isEntryForm,
+      autocompleteOpen,
+    } = params
 
-    if (isMultiline){
+    if (isMultiline) {
       this.setState({
         editingMultilineEntryKey: entryKey,
-        editingMultilineEnvironment: environment
+        editingMultilineEnvironment: environment,
       })
     } else {
       this.setState({
         editingMultilineEntryKey: null,
-        editingMultilineEnvironment: null
+        editingMultilineEnvironment: null,
       })
     }
 
-    if (autocompleteOpen){
+    if (autocompleteOpen) {
       this.setState({
         autocompleteOpenEntryKey: entryKey,
-        autocompleteOpenEnvironment: environment
+        autocompleteOpenEnvironment: environment,
       })
     } else {
       this.setState({
         autocompleteOpenEntryKey: null,
-        autocompleteOpenEnvironment: null
+        autocompleteOpenEnvironment: null,
       })
     }
 
-    if (!isEntryForm){
+    if (!isEntryForm) {
       this.props.editCell(entryKey, environment, subEnvId)
     }
   }
 
-  _onStoppedEditing(isEntryForm){
+  _onStoppedEditing(isEntryForm) {
     this.setState({
       editingMultilineEntryKey: null,
       editingMultilineEnvironment: null,
       autocompleteOpenEntryKey: null,
-      autocompleteOpenEnvironment: null
+      autocompleteOpenEnvironment: null,
     })
 
-    if (!isEntryForm){
+    if (!isEntryForm) {
       this.props.stoppedEditing()
     }
   }
 
-  _onUpdateEntryVal(entryKey, environment, update, subEnvId, isEntryForm){
+  _onUpdateEntryVal(entryKey, environment, update, subEnvId, isEntryForm) {
     this.setState({
       editingMultilineEntryKey: null,
-      editingMultilineEnvironment: null
+      editingMultilineEnvironment: null,
     })
 
-    if (!isEntryForm){
+    if (!isEntryForm) {
       this.props.updateEntryVal(entryKey, environment, update, subEnvId)
     }
   }
 
-  _clearSocketUpdatingTimeout(){
-    if (this.socketUpdatingTimeout){
+  _clearSocketUpdatingTimeout() {
+    if (this.socketUpdatingTimeout) {
       clearTimeout(this.socketUpdatingTimeout)
       this.socketUpdatingTimeout = null
     }
   }
 
-  _subEnvsOpen(props){
-    if(!props)props = this.props
+  _subEnvsOpen(props) {
+    if (!props) props = this.props
     return (props.envsWithMeta && props.params.sub) || false
   }
 
-  _subEnvsReadOnly(props){
-    if(!props)props = this.props
+  _subEnvsReadOnly(props) {
+    if (!props) props = this.props
     return subEnvsReadOnly(props)
   }
 
-  _subEnvVarsReadOnly(props){
-    if(!props)props = this.props
-    return subEnvVarsReadOnly({...props, environment: this._subEnvsOpen()})
+  _subEnvVarsReadOnly(props) {
+    if (!props) props = this.props
+    return subEnvVarsReadOnly({ ...props, environment: this._subEnvsOpen() })
   }
 
-  _isEmpty(arg=null){
+  _isEmpty(arg = null) {
     const props = arg || this.props
     return allEntries(props.envsWithMeta).length == 0
   }
 
-  _classNames(){
+  _classNames() {
     return [
-      "environments",
-      [this.props.parentType, "parent"].join("-"),
-      (this.props.isUpdatingEnv ? "updating-env" : ""),
-      (this._isEmpty() ? "empty" : ""),
-      (this.state.hideValues ? "hide-values" : ""),
-      (hasAnyVal(this.props.envsWithMeta) ? "" : "has-no-val"),
-      (this.props.socketUserUpdatingEnvs ? "receiving-socket-update" : ""),
-      (this.props.didOnboardImport ? "did-onboard-import" : ""),
-      (this.state.showFilter ? "show-filter" : ""),
-      (this.state.editingMultilineEnvironment ? "editing-multiline" : ""),
-      (this.state.editingMultilineEnvironment && !this.state.editingMultilineEntryKey ? "editing-multiline-entry-form" : ""),
-      (this.state.editingMultilineEnvironment && this.state.editingMultilineEntryKey ? "editing-multiline-grid" : ""),
-      (this._subEnvsOpen() ? "sub-envs-open" : ""),
-      (this._subEnvsReadOnly() ? "subenvs-read-only" : ""),
-      (this._subEnvVarsReadOnly() ? "subenv-vars-read-only" : "")
+      'environments',
+      [this.props.parentType, 'parent'].join('-'),
+      this.props.isUpdatingEnv ? 'updating-env' : '',
+      this._isEmpty() ? 'empty' : '',
+      this.state.hideValues ? 'hide-values' : '',
+      hasAnyVal(this.props.envsWithMeta) ? '' : 'has-no-val',
+      this.props.socketUserUpdatingEnvs ? 'receiving-socket-update' : '',
+      this.props.didOnboardImport ? 'did-onboard-import' : '',
+      this.state.showFilter ? 'show-filter' : '',
+      this.state.editingMultilineEnvironment ? 'editing-multiline' : '',
+      this.state.editingMultilineEnvironment &&
+      !this.state.editingMultilineEntryKey
+        ? 'editing-multiline-entry-form'
+        : '',
+      this.state.editingMultilineEnvironment &&
+      this.state.editingMultilineEntryKey
+        ? 'editing-multiline-grid'
+        : '',
+      this._subEnvsOpen() ? 'sub-envs-open' : '',
+      this._subEnvsReadOnly() ? 'subenvs-read-only' : '',
+      this._subEnvVarsReadOnly() ? 'subenv-vars-read-only' : '',
     ]
   }
 
-  render(){
-    if (!this.props.parent){
-      return <div></div>
+  render() {
+    if (!this.props.parent) {
+      return <div />
     }
 
-    return h.div({className: this._classNames().join(" ")}, this._renderContents())
+    return h.div(
+      { className: this._classNames().join(' ') },
+      this._renderContents()
+    )
   }
 
-  _renderContents(){
+  _renderContents() {
     return [
       this._renderHeader(),
       this._renderFilter(),
-      (this._subEnvsOpen() ? this._renderSubEnvs() : this._renderGrid()),
-      this._renderSocketUpdate()
+      this._subEnvsOpen() ? this._renderSubEnvs() : this._renderGrid(),
+      this._renderSocketUpdate(),
     ]
   }
 
-  _renderHeader(){
+  _renderHeader() {
     return h(EnvHeader, {
       ...this.props,
-      ...R.pick(["hideValues", "filter", "showFilter"], this.state),
+      ...R.pick(['hideValues', 'filter', 'showFilter'], this.state),
       subEnvsOpen: this._subEnvsOpen(),
       isEmpty: this._isEmpty(),
-      onToggleHideValues: ()=> this.setState(state => ({hideValues: !state.hideValues})),
+      onToggleHideValues: () =>
+        this.setState(state => ({ hideValues: !state.hideValues })),
     })
   }
 
-  _renderFilter(){
+  _renderFilter() {
     const envsWithMeta = this.props.envsWithMeta,
-          subEnvsOpen = this._subEnvsOpen(),
-          subEnvsEmpty = subEnvsOpen && R.isEmpty(envsWithMeta[subEnvsOpen]["@@__sub__"] || {}),
-          subEnvsAdding = subEnvsOpen && this.props.params.sel == "add"
+      subEnvsOpen = this._subEnvsOpen(),
+      subEnvsEmpty =
+        subEnvsOpen && R.isEmpty(envsWithMeta[subEnvsOpen]['@@__sub__'] || {}),
+      subEnvsAdding = subEnvsOpen && this.props.params.sel == 'add'
 
-    if (!subEnvsEmpty && !subEnvsAdding && !(subEnvsOpen && this._subEnvVarsReadOnly())){
+    if (
+      !subEnvsEmpty &&
+      !subEnvsAdding &&
+      !(subEnvsOpen && this._subEnvVarsReadOnly())
+    ) {
       return h(Filter, {
-        onFilter: filter => this.setState({filter}),
+        onFilter: filter => this.setState({ filter }),
         onToggleFilter: ::this._onToggleFilter,
         value: this.state.filter,
-        placeholder: "Filter by variable name…",
-        onKeyDown: (e)=> {
-          if (e.keyCode == 27){ // escape key
+        placeholder: 'Filter by variable name…',
+        onKeyDown: e => {
+          if (e.keyCode == 27) {
+            // escape key
             this._onToggleFilter()
           }
-        }
+        },
       })
     }
   }
 
-  _renderGrid(){
+  _renderGrid() {
     return h(EnvGrid, {
       ...this.props,
-      ...R.pick([
-        "hideValues",
-        "startedOnboarding",
-        "filter",
-        "editingMultilineEntryKey",
-        "editingMultilineEnvironment",
-        "autocompleteOpenEntryKey",
-        "autocompleteOpenEnvironment"
-      ], this.state),
+      ...R.pick(
+        [
+          'hideValues',
+          'startedOnboarding',
+          'filter',
+          'editingMultilineEntryKey',
+          'editingMultilineEnvironment',
+          'autocompleteOpenEntryKey',
+          'autocompleteOpenEnvironment',
+        ],
+        this.state
+      ),
       editCell: ::this._onEditCell,
       stoppedEditing: ::this._onStoppedEditing,
-      updateEntryVal: ::this._onUpdateEntryVal
+      updateEntryVal: ::this._onUpdateEntryVal,
     })
   }
 
-  _renderSubEnvs(){
+  _renderSubEnvs() {
     const environment = this._subEnvsOpen()
     return h(SubEnvs, {
       ...this.props,
-      ...R.pick([
-        "hideValues",
-        "filter",
-        "editingMultilineEntryKey",
-        "editingMultilineEnvironment",
-        "autocompleteOpenEntryKey",
-        "autocompleteOpenEnvironment"
-      ], this.state),
+      ...R.pick(
+        [
+          'hideValues',
+          'filter',
+          'editingMultilineEntryKey',
+          'editingMultilineEnvironment',
+          'autocompleteOpenEntryKey',
+          'autocompleteOpenEnvironment',
+        ],
+        this.state
+      ),
       environment,
       editCell: ::this._onEditCell,
       stoppedEditing: ::this._onStoppedEditing,
       updateEntryVal: ::this._onUpdateEntryVal,
       subEnvsReadOnly: this._subEnvsReadOnly(),
-      subEnvVarsReadOnly: subEnvVarsReadOnly({...this.props, environment})
+      subEnvVarsReadOnly: subEnvVarsReadOnly({ ...this.props, environment }),
     })
   }
 
-  _renderSocketUpdate(){
-    if (this.state.showSocketUpdating){
-      const {firstName, lastName} = (this.state.lastSocketUserUpdatingEnvs || {})
-      return h.div(".socket-update-envs", [
+  _renderSocketUpdate() {
+    if (this.state.showSocketUpdating) {
+      const { firstName, lastName } =
+        this.state.lastSocketUserUpdatingEnvs || {}
+      return h.div('.socket-update-envs', [
         h.label([
-          h.span("Receiving update from "),
-          h.span(".name", [firstName, lastName].join(" "))
+          h.span('Receiving update from '),
+          h.span('.name', [firstName, lastName].join(' ')),
         ]),
-        h(SmallLoader)
+        h(SmallLoader),
       ])
     }
   }
 }
-

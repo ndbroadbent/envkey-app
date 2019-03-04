@@ -2,18 +2,18 @@ import React from 'react'
 import { Link } from 'react-router'
 import { imagePath } from 'lib/ui'
 
-const Header = ()=>{
+const Header = () => {
+  return (
+    <header className="main-header">
+      <div className="logo">
+        <Link to="/">
+          <img src={imagePath('envkey-logo.svg')} />
+        </Link>
+      </div>
 
-  return <header className="main-header">
-    <div className="logo">
-      <Link to="/">
-        <img src={imagePath("envkey-logo.svg")}/>
-      </Link>
-    </div>
-
-    <span className="line" />
-  </header>
-
+      <span className="line" />
+    </header>
+  )
 }
 
 export default Header

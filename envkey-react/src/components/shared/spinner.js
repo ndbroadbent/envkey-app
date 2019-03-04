@@ -49,7 +49,8 @@ const svgString = `<svg width="50" height="50" xmlns="http://www.w3.org/2000/svg
   </g>
 </svg>`
 
-export default function (){
-  return <span className="spinner"
-               dangerouslySetInnerHTML={{ __html: svgString }} />
+export default function() {
+  return (
+    <span className="spinner" dangerouslySetInnerHTML={{ __html: svgString }} />
+  )
 }

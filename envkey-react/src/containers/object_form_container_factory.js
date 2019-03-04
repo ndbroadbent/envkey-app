@@ -1,54 +1,54 @@
 import React from 'react'
 import R from 'ramda'
 import { connect } from 'react-redux'
-import h from "lib/ui/hyperscript_with_helpers"
+import h from 'lib/ui/hyperscript_with_helpers'
 import { createObject } from 'actions'
 import {
   getIsCreating,
   getOrgRolesAssignable,
   getCurrentOrg,
   getApps,
-  getImportErrors
+  getImportErrors,
 } from 'selectors'
-import {AppForm, UserForm} from 'components/forms'
+import { AppForm, UserForm } from 'components/forms'
 
-const ObjectFormContainerFactory = ({objectType})=> {
+const ObjectFormContainerFactory = ({ objectType }) => {
+  const formClass = { app: AppForm, user: UserForm }[objectType],
+    ObjectFormContainer = props => h.div('.new-page', [h(formClass, props)]),
+    mapStateToProps = (state, ownProps) => {
+      const props = {
+        isSubmitting: getIsCreating({ objectType }, state),
+        currentOrg: getCurrentOrg(state),
+        numApps: getApps(state).length,
+      }
 
-const
-  formClass = { app: AppForm, user: UserForm }[objectType],
+      if (objectType == 'user') {
+        props.orgRolesAssignable = getOrgRolesAssignable(state)
+      }
 
-  ObjectFormContainer = props => h.div(".new-page", [h(formClass, props)]),
+      if (objectType == 'app') {
+        props.renderImporter = true
+        props.environments = ['development', 'staging', 'production']
+      }
 
-  mapStateToProps = (state, ownProps) => {
-    const props = {
-      isSubmitting: getIsCreating({objectType}, state),
-      currentOrg: getCurrentOrg(state),
-      numApps: getApps(state).length
-    }
+      return props
+    },
+    mapDispatchToProps = (dispatch, ownProps) => ({
+      onSubmit: params => {
+        dispatch(
+          createObject({
+            objectType,
+            params: params.params || params,
+            toImport: params.toImport,
+          })
+        )
+      },
+    })
 
-    if(objectType == "user"){
-      props.orgRolesAssignable = getOrgRolesAssignable(state)
-    }
-
-    if(objectType == "app"){
-      props.renderImporter = true
-      props.environments = ["development", "staging", "production"]
-    }
-
-    return props
-  },
-
-  mapDispatchToProps = (dispatch, ownProps) => ({
-    onSubmit: params => {
-      dispatch(createObject({
-        objectType,
-        params: (params.params || params),
-        toImport: params.toImport
-      }))
-    }
-  })
-
-  return connect(mapStateToProps, mapDispatchToProps)(ObjectFormContainer)
+  return connect(
+    mapStateToProps,
+    mapDispatchToProps
+  )(ObjectFormContainer)
 }
 
 export default ObjectFormContainerFactory

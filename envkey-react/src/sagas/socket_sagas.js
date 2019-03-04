@@ -1,8 +1,15 @@
-import { takeLatest, takeEvery, take, put, select, call } from 'redux-saga/effects'
-import {push } from 'react-router-redux'
+import {
+  takeLatest,
+  takeEvery,
+  take,
+  put,
+  select,
+  call,
+} from 'redux-saga/effects'
+import { push } from 'react-router-redux'
 import {
   redirectFromOrgIndexIfNeeded,
-  resolveEnvUpdateConflicts
+  resolveEnvUpdateConflicts,
 } from './helpers'
 import {
   SOCKET_SUBSCRIBE_ORG_CHANNEL,
@@ -24,7 +31,7 @@ import {
   socketBroadcastEnvsStatus,
   processedSocketUpdateEnvStatus,
   resetSession,
-  selectOrg
+  selectOrg,
 } from 'actions'
 import {
   getAuth,
@@ -40,7 +47,7 @@ import {
   getAnonSocketEnvsStatus,
   getSelectedObjectId,
   getSubEnvs,
-  getEnvActionsPendingByEnvUpdateId
+  getEnvActionsPendingByEnvUpdateId,
 } from 'selectors'
 import {
   UPDATE_ENVS,
@@ -51,76 +58,93 @@ import {
   unsubscribeObjectChannel,
   subscribeObjectChannel,
   broadcastOrgChannel,
-  broadcastObjectChannel
+  broadcastObjectChannel,
 } from 'lib/socket'
 import { allEntriesWithSubEnvs } from 'lib/env/query'
 import { deanonymizeEnvStatus } from 'lib/env/update_status'
-import {dispatchEnvUpdateRequestIfNeeded} from './helpers'
+import { dispatchEnvUpdateRequestIfNeeded } from './helpers'
 
-function *ensureSocketReady(){
+function* ensureSocketReady() {
   const auth = yield select(getAuth),
-        currentOrg = yield select(getCurrentOrg)
+    currentOrg = yield select(getCurrentOrg)
   ensureSocket(auth, currentOrg.slug)
 }
 
-function *onSubscribeOrgChannel(){
+function* onSubscribeOrgChannel() {
   const currentOrg = yield select(getCurrentOrg),
-        currentUser = yield select(getCurrentUser)
+    currentUser = yield select(getCurrentUser)
   yield call(ensureSocketReady)
 
   unsubscribeOrgChannels()
   subscribeOrgChannels(currentOrg, currentUser)
 }
 
-function *onUnsubscribeObjectChannel(){
+function* onUnsubscribeObjectChannel() {
   unsubscribeObjectChannel()
 }
 
-function *onUnsubscribeAll(){
+function* onUnsubscribeAll() {
   unsubscribeObjectChannel()
   unsubscribeOrgChannels()
 }
 
-function *onSubscribeObjectChannel({payload: object}){
+function* onSubscribeObjectChannel({ payload: object }) {
   yield call(ensureSocketReady)
   subscribeObjectChannel(object)
 }
 
-function *onSocketUpdateOrg(action){
+function* onSocketUpdateOrg(action) {
   const auth = yield select(getAuth),
-        currentOrg = yield select(getCurrentOrg)
+    currentOrg = yield select(getCurrentOrg)
 
   // Cancel if not logged in / org selected
-  if(!auth || !currentOrg)return
+  if (!auth || !currentOrg) return
 
   const currentOrgUser = yield select(getCurrentOrgUser),
-        selectedObjectId = yield select(getSelectedObjectId),
-        {actorId, actionType, targetType, targetId, appId, meta} = action.payload
+    selectedObjectId = yield select(getSelectedObjectId),
+    { actorId, actionType, targetType, targetId, appId, meta } = action.payload
 
   // Do nothing if update message originated with this user
-  if(auth.id == actorId)return
+  if (auth.id == actorId) return
 
   // Handle org deleted
-  if (actionType == "deleted" && targetType == "Org" && targetId == currentOrg.id){
-    alert("This organization has been deleted by the owner.")
-    yield put(push("/home"))
+  if (
+    actionType == 'deleted' &&
+    targetType == 'Org' &&
+    targetId == currentOrg.id
+  ) {
+    alert('This organization has been deleted by the owner.')
+    yield put(push('/home'))
     yield put(resetSession())
     return
   }
 
   // Handle lost org access
-  if (actionType == "deleted" && targetType == "OrgUser" && targetId == currentOrgUser.id){
-    alert("Your access to this organization has been removed by an org admin.")
-    yield put(push("/home"))
+  if (
+    actionType == 'deleted' &&
+    targetType == 'OrgUser' &&
+    targetId == currentOrgUser.id
+  ) {
+    alert('Your access to this organization has been removed by an org admin.')
+    yield put(push('/home'))
     yield put(resetSession())
     return
   }
 
   // Handle org access change
-  if ((actionType == "created" && targetType == "OrgUser" && meta && meta.userId == auth.id) ||
-      (actionType == "updated" && targetType == "Org" && meta && meta.updateType == "update_owner" && meta.userId == auth.id) ){
-    yield put(fetchCurrentUserUpdates({noMinUpdatedAt: true}))
-    alert("Your organization access level has been updated by an org admin.")
+  if (
+    (actionType == 'created' &&
+      targetType == 'OrgUser' &&
+      meta &&
+      meta.userId == auth.id) ||
+    (actionType == 'updated' &&
+      targetType == 'Org' &&
+      meta &&
+      meta.updateType == 'update_owner' &&
+      meta.userId == auth.id)
+  ) {
+    yield put(fetchCurrentUserUpdates({ noMinUpdatedAt: true }))
+    alert('Your organization access level has been updated by an org admin.')
     yield take(FETCH_CURRENT_USER_UPDATES_API_SUCCESS)
     yield put(push(`/${currentOrg.slug}`))
     yield call(redirectFromOrgIndexIfNeeded)
@@ -128,9 +152,13 @@ function *onSocketUpdateOrg(action){
   }
 
   // Current app deleted
-  if (actionType == "deleted" && targetType == "App" && targetId == selectedObjectId){
-    yield put(fetchCurrentUserUpdates({noMinUpdatedAt: true}))
-    alert("This app has been deleted by an org admin.")
+  if (
+    actionType == 'deleted' &&
+    targetType == 'App' &&
+    targetId == selectedObjectId
+  ) {
+    yield put(fetchCurrentUserUpdates({ noMinUpdatedAt: true }))
+    alert('This app has been deleted by an org admin.')
     yield take(FETCH_CURRENT_USER_UPDATES_API_SUCCESS)
     yield put(push(`/${currentOrg.slug}`))
     yield call(redirectFromOrgIndexIfNeeded)
@@ -138,9 +166,15 @@ function *onSocketUpdateOrg(action){
   }
 
   // Current app access removed
-  if (actionType == "deleted" && targetType == "AppUser" && appId == selectedObjectId && meta && meta.userId == auth.id){
-    yield put(fetchCurrentUserUpdates({noMinUpdatedAt: true}))
-    alert("Your access to this app has been removed by an app admin.")
+  if (
+    actionType == 'deleted' &&
+    targetType == 'AppUser' &&
+    appId == selectedObjectId &&
+    meta &&
+    meta.userId == auth.id
+  ) {
+    yield put(fetchCurrentUserUpdates({ noMinUpdatedAt: true }))
+    alert('Your access to this app has been removed by an app admin.')
     yield take(FETCH_CURRENT_USER_UPDATES_API_SUCCESS)
     yield put(push(`/${currentOrg.slug}`))
     yield call(redirectFromOrgIndexIfNeeded)
@@ -148,16 +182,27 @@ function *onSocketUpdateOrg(action){
   }
 
   // Current app access changed
-  if (actionType == "created" && targetType == "AppUser" && meta && meta.userId == auth.id){
-    yield put(fetchCurrentUserUpdates({noMinUpdatedAt: true}))
-    if(appId == selectedObjectId)alert("Your app access level has been updated by an app admin.")
+  if (
+    actionType == 'created' &&
+    targetType == 'AppUser' &&
+    meta &&
+    meta.userId == auth.id
+  ) {
+    yield put(fetchCurrentUserUpdates({ noMinUpdatedAt: true }))
+    if (appId == selectedObjectId)
+      alert('Your app access level has been updated by an app admin.')
     return
   }
 
   // Selected user deleted
-  if (actionType == "deleted" && targetType == "OrgUser" && meta && meta.userId == selectedObjectId){
-    yield put(fetchCurrentUserUpdates({noMinUpdatedAt: true}))
-    alert("This user has been removed from the organization by an org admin.")
+  if (
+    actionType == 'deleted' &&
+    targetType == 'OrgUser' &&
+    meta &&
+    meta.userId == selectedObjectId
+  ) {
+    yield put(fetchCurrentUserUpdates({ noMinUpdatedAt: true }))
+    alert('This user has been removed from the organization by an org admin.')
     yield take(FETCH_CURRENT_USER_UPDATES_API_SUCCESS)
     yield put(push(`/${currentOrg.slug}`))
     yield call(redirectFromOrgIndexIfNeeded)
@@ -165,102 +210,134 @@ function *onSocketUpdateOrg(action){
   }
 
   // Env update
-  if (actionType == "updated" && targetType == "App" && meta && meta.updateType == "update_envs"){
+  if (
+    actionType == 'updated' &&
+    targetType == 'App' &&
+    meta &&
+    meta.updateType == 'update_envs'
+  ) {
     let app = yield select(getApp(appId))
 
-    if (app){
+    if (app) {
       const preUpdateEnvsWithMeta = app.envsWithMeta
 
-      yield put(fetchObjectDetails({
-        targetId,
-        objectType: "app",
-        decryptEnvs: true,
-        socketUpdate: true,
-        socketActorId: actorId,
-        socketEnvUpdateId: meta.envUpdateId
-      }))
+      yield put(
+        fetchObjectDetails({
+          targetId,
+          objectType: 'app',
+          decryptEnvs: true,
+          socketUpdate: true,
+          socketActorId: actorId,
+          socketEnvUpdateId: meta.envUpdateId,
+        })
+      )
 
       yield take(FETCH_OBJECT_DETAILS_SUCCESS)
 
       app = yield select(getApp(appId))
-      const envActionsPending = yield select(getEnvActionsPendingByEnvUpdateId(appId, meta.envUpdateId)),
-            hasConflict = yield call(resolveEnvUpdateConflicts, {
-              envActionsPending,
-              preUpdateEnvsWithMeta,
-              envUpdateId: meta.envUpdateId,
-              parentId: app.id,
-              postUpdateEnvsWithMeta: app.envsWithMeta
-            })
+      const envActionsPending = yield select(
+          getEnvActionsPendingByEnvUpdateId(appId, meta.envUpdateId)
+        ),
+        hasConflict = yield call(resolveEnvUpdateConflicts, {
+          envActionsPending,
+          preUpdateEnvsWithMeta,
+          envUpdateId: meta.envUpdateId,
+          parentId: app.id,
+          postUpdateEnvsWithMeta: app.envsWithMeta,
+        })
 
-      if (hasConflict){
+      if (hasConflict) {
         return
       }
 
       yield call(dispatchEnvUpdateRequestIfNeeded, {
         parent: app,
-        parentType: "app",
+        parentType: 'app',
         parentId: targetId,
-        skipDelay: true
+        skipDelay: true,
       })
     }
     return
   }
 
   // Subscription updated
-  const subscriptionUpdateTypes = ["upgrade_subscription", "update_subscription", "cancel_subscription", "trial_ended", "trial_started"]
-  if (actionType == "updated" && targetType == "Org" && meta && subscriptionUpdateTypes.includes(meta.updateType)){
-    yield put(fetchCurrentUserUpdates({noMinUpdatedAt: true}))
+  const subscriptionUpdateTypes = [
+    'upgrade_subscription',
+    'update_subscription',
+    'cancel_subscription',
+    'trial_ended',
+    'trial_started',
+  ]
+  if (
+    actionType == 'updated' &&
+    targetType == 'Org' &&
+    meta &&
+    subscriptionUpdateTypes.includes(meta.updateType)
+  ) {
+    yield put(fetchCurrentUserUpdates({ noMinUpdatedAt: true }))
     return
   }
 
-  if (actionType == "deleted" && !(meta && meta.bulkAction)){
+  if (actionType == 'deleted' && !(meta && meta.bulkAction)) {
     // Other deletes that are not bulk actions
-    yield put(fetchCurrentUserUpdates({noMinUpdatedAt: true}))
-  } else if (!(meta && meta.bulkAction)){
+    yield put(fetchCurrentUserUpdates({ noMinUpdatedAt: true }))
+  } else if (!(meta && meta.bulkAction)) {
     // For other non-bulk changes, update in background
     yield put(fetchCurrentUserUpdates())
   }
 }
 
-function *onSocketUpdateEnvsStatus(action){
+function* onSocketUpdateEnvsStatus(action) {
   const currentUser = yield select(getCurrentUser)
 
-  if (!currentUser)return
+  if (!currentUser) return
 
   // Don't receive updates from current user broadcasts
-  if (action.payload.userId == currentUser.id){
+  if (action.payload.userId == currentUser.id) {
     return
   }
 
   const selectedObject = yield select(getSelectedObject),
-        entries = yield call(allEntriesWithSubEnvs, selectedObject.envsWithMeta),
-        selectedObjectType = yield select(getSelectedObjectType),
-        environments = yield select(getEnvironmentLabelsWithSubEnvs(selectedObject.id)),
-        subEnvs = yield select(getSubEnvs(selectedObject.id)),
-        deanonStatus = deanonymizeEnvStatus(action.payload.status, entries, environments, subEnvs)
+    entries = yield call(allEntriesWithSubEnvs, selectedObject.envsWithMeta),
+    selectedObjectType = yield select(getSelectedObjectType),
+    environments = yield select(
+      getEnvironmentLabelsWithSubEnvs(selectedObject.id)
+    ),
+    subEnvs = yield select(getSubEnvs(selectedObject.id)),
+    deanonStatus = deanonymizeEnvStatus(
+      action.payload.status,
+      entries,
+      environments,
+      subEnvs
+    )
 
-  yield put(processedSocketUpdateEnvStatus({status: deanonStatus, userId: action.payload.userId}))
+  yield put(
+    processedSocketUpdateEnvStatus({
+      status: deanonStatus,
+      userId: action.payload.userId,
+    })
+  )
 }
 
-function *onSocketBroadcastEnvsStatus(action){
-  const {id: userId} = yield select(getAuth),
-        anonStatus = yield select(getAnonSocketEnvsStatus)
+function* onSocketBroadcastEnvsStatus(action) {
+  const { id: userId } = yield select(getAuth),
+    anonStatus = yield select(getAnonSocketEnvsStatus)
 
-  broadcastObjectChannel(userId, UPDATE_ENVS_STATUS, {status: anonStatus})
+  broadcastObjectChannel(userId, UPDATE_ENVS_STATUS, { status: anonStatus })
 }
 
-function *onSocketUserSubscribedObjectChannel(action){
+function* onSocketUserSubscribedObjectChannel(action) {
   yield put(socketBroadcastEnvsStatus())
 }
 
-function *onSocketUpdateLocalStatus(action){
+function* onSocketUpdateLocalStatus(action) {
   const currentUser = yield select(getCurrentUser)
-  if(!currentUser)return
+  if (!currentUser) return
 
   yield put(socketBroadcastEnvsStatus())
 }
 
-export default function* socketSagas(){
+export default function* socketSagas() {
   yield [
     takeLatest(SOCKET_SUBSCRIBE_ORG_CHANNEL, onSubscribeOrgChannel),
 
@@ -278,6 +355,9 @@ export default function* socketSagas(){
 
     takeEvery(SOCKET_BROADCAST_ENVS_STATUS, onSocketBroadcastEnvsStatus),
 
-    takeEvery(SOCKET_USER_SUBSCRIBED_OBJECT_CHANNEL, onSocketUserSubscribedObjectChannel)
+    takeEvery(
+      SOCKET_USER_SUBSCRIBED_OBJECT_CHANNEL,
+      onSocketUserSubscribedObjectChannel
+    ),
   ]
 }

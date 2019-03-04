@@ -20,5 +20,5 @@ export default combineReducers({
   ...cryptoReducers,
   ...importReducers,
   ...inviteReducers,
-  routing: routerReducer
+  routing: routerReducer,
 })

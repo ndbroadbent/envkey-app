@@ -17,51 +17,38 @@ import {
   START_DEMO,
   SET_DEMO_DOWNLOAD_URL,
   RESET_SESSION,
-  ACCOUNT_RESET_OPTIONS_REQUEST
+  ACCOUNT_RESET_OPTIONS_REQUEST,
 } from './action_types'
 
-export const
-  appLoaded = createAction(APP_LOADED),
-
+export const appLoaded = createAction(APP_LOADED),
   verifyEmailRequest = createAction(VERIFY_EMAIL_REQUEST),
-
   verifyEmailCodeRequest = createAction(VERIFY_EMAIL_CODE_REQUEST),
-
   resetVerifyEmail = createAction(RESET_VERIFY_EMAIL),
-
   login = createAction(
     LOGIN,
-    R.pick(["email", "emailVerificationCode"]),
-    R.pick(["password", "orgSlug"])
+    R.pick(['email', 'emailVerificationCode']),
+    R.pick(['password', 'orgSlug'])
   ),
-
   register = createAction(REGISTER),
-
   selectAccount = createAction(
     SELECT_ACCOUNT,
-    R.pick(["auth", "privkey"]),
-    ({auth})=> ({accountId: auth.id})
+    R.pick(['auth', 'privkey']),
+    ({ auth }) => ({ accountId: auth.id })
   ),
-
   fetchCurrentUser = createAction(FETCH_CURRENT_USER_REQUEST),
-
-  fetchCurrentUserUpdates = createAction(FETCH_CURRENT_USER_UPDATES_REQUEST, R.always({}), R.pick(["noMinUpdatedAt"])),
-
-  logout = createAction(LOGOUT, R.always({}), R.pick(["accountId"])),
-
+  fetchCurrentUserUpdates = createAction(
+    FETCH_CURRENT_USER_UPDATES_REQUEST,
+    R.always({}),
+    R.pick(['noMinUpdatedAt'])
+  ),
+  logout = createAction(LOGOUT, R.always({}), R.pick(['accountId'])),
   logoutAll = createAction(LOGOUT_ALL),
-
   grantEnvAccessRequest = createAction(
     GRANT_ENV_ACCESS_REQUEST,
     R.pick(['envs', 'orgUser']),
     R.pick(['orgUserId', 'userId', 'isInvite', 'parentId'])
   ),
-
   startDemo = createAction(START_DEMO),
-
   setDemoDownloadUrl = createAction(SET_DEMO_DOWNLOAD_URL),
-
   resetSession = createAction(RESET_SESSION),
-
-  accountResetOptionsRequest= createAction(ACCOUNT_RESET_OPTIONS_REQUEST)
-
+  accountResetOptionsRequest = createAction(ACCOUNT_RESET_OPTIONS_REQUEST)

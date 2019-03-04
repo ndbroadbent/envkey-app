@@ -39,14 +39,13 @@ import {
   BILLING_SAVE_INVOICE_PDF_SUCCESS,
   BILLING_SAVE_INVOICE_PDF_FAILED,
   UPDATE_OBJECT_SETTINGS_SUCCESS,
-  UPDATE_NETWORK_SETTINGS_SUCCESS
-} from "actions"
+  UPDATE_NETWORK_SETTINGS_SUCCESS,
+} from 'actions'
 import R from 'ramda'
-import {indexById} from './helpers'
+import { indexById } from './helpers'
 
-export const
-  currentOrgSlug = (state = null, action)=>{
-    switch(action.type){
+export const currentOrgSlug = (state = null, action) => {
+    switch (action.type) {
       case SELECT_ORG:
         return action.payload
 
@@ -73,9 +72,8 @@ export const
         return state
     }
   },
-
-  orgs = (state = {}, action)=>{
-    switch(action.type){
+  orgs = (state = {}, action) => {
+    switch (action.type) {
       case FETCH_CURRENT_USER_SUCCESS:
       case LOGIN_SUCCESS:
       case REGISTER_SUCCESS:
@@ -88,10 +86,12 @@ export const
         return indexById([action.payload.org])
 
       case FETCH_CURRENT_USER_UPDATES_API_SUCCESS:
-        if (action.meta && action.meta.noMinUpdatedAt){
+        if (action.meta && action.meta.noMinUpdatedAt) {
           return action.payload.orgs ? indexById(action.payload.orgs) : state
         } else {
-          return action.payload.orgs && action.payload.orgs.length ? {...state, ...indexById(action.payload.orgs)} : state
+          return action.payload.orgs && action.payload.orgs.length
+            ? { ...state, ...indexById(action.payload.orgs) }
+            : state
         }
 
       case BILLING_UPDATE_CARD_SUCCESS:
@@ -101,7 +101,7 @@ export const
       case RENAME_OBJECT_SUCCESS:
       case UPDATE_OBJECT_SETTINGS_SUCCESS:
       case UPDATE_NETWORK_SETTINGS_SUCCESS:
-        if (action.meta.objectType == "org"){
+        if (action.meta.objectType == 'org') {
           return R.assoc(action.payload.id, action.payload, state)
         } else {
           return state
@@ -118,9 +118,8 @@ export const
         return state
     }
   },
-
-  orgsLoaded = (state = false, action)=>{
-    switch(action.type){
+  orgsLoaded = (state = false, action) => {
+    switch (action.type) {
       case FETCH_CURRENT_USER_SUCCESS:
       case LOGIN_SUCCESS:
       case REGISTER_SUCCESS:
@@ -140,9 +139,8 @@ export const
         return state
     }
   },
-
-  isCreatingOrg = (state=false, action)=>{
-    switch (action.type){
+  isCreatingOrg = (state = false, action) => {
+    switch (action.type) {
       case CREATE_ORG_REQUEST:
         return true
 
@@ -154,9 +152,8 @@ export const
         return state
     }
   },
-
-  stripeFormOpened = (state=false, action)=>{
-    switch(action.type){
+  stripeFormOpened = (state = false, action) => {
+    switch (action.type) {
       case BILLING_OPEN_STRIPE_FORM:
         return true
 
@@ -168,9 +165,8 @@ export const
         return state
     }
   },
-
-  isUpdatingSubscription = (state = false, action)=>{
-    switch(action.type){
+  isUpdatingSubscription = (state = false, action) => {
+    switch (action.type) {
       case BILLING_UPDATE_SUBSCRIPTION_REQUEST:
         return true
 
@@ -178,15 +174,14 @@ export const
         return false
 
       case BILLING_UPDATE_SUBSCRIPTION_SUCCESS:
-        return action.meta.updateType == "cancel" ? state : false
+        return action.meta.updateType == 'cancel' ? state : false
 
       default:
         return state
     }
   },
-
-  isUpdatingStripeCard = (state = false, action)=>{
-    switch(action.type){
+  isUpdatingStripeCard = (state = false, action) => {
+    switch (action.type) {
       case BILLING_UPDATE_CARD_REQUEST:
         return true
 
@@ -198,9 +193,8 @@ export const
         return state
     }
   },
-
-  isUpdatingOrgOwner = (state = false, action)=>{
-    switch(action.type){
+  isUpdatingOrgOwner = (state = false, action) => {
+    switch (action.type) {
       case UPDATE_ORG_OWNER_REQUEST:
         return true
 
@@ -212,9 +206,8 @@ export const
         return state
     }
   },
-
-  invoices = (state = null, action)=>{
-    switch(action.type){
+  invoices = (state = null, action) => {
+    switch (action.type) {
       case LOGIN:
       case LOGIN_REQUEST:
       case REGISTER:
@@ -231,9 +224,8 @@ export const
         return state
     }
   },
-
-  isLoadingInvoices = (state = false, action)=>{
-    switch(action.type){
+  isLoadingInvoices = (state = false, action) => {
+    switch (action.type) {
       case BILLING_FETCH_INVOICE_LIST_REQUEST:
         return true
 
@@ -245,9 +237,8 @@ export const
         return state
     }
   },
-
-  isLoadingInvoicePdf = (state = {}, action)=> {
-    switch(action.type){
+  isLoadingInvoicePdf = (state = {}, action) => {
+    switch (action.type) {
       case BILLING_FETCH_INVOICE_PDF:
         return R.assoc(action.payload.id, true, state)
 

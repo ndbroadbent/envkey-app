@@ -6,12 +6,12 @@ import Editable from './traits/editable'
 const EditableEntryCellBase = Editable(EntryCell)
 
 export default class EditableEntryCell extends EditableEntryCellBase {
-
-  _transformInputVal(val){
+  _transformInputVal(val) {
     const res = val.trim()
     return this.props.app.autoCaps ? res.toUpperCase() : res
   }
 
-  _inputPlaceholder(){ return "VARIABLE_NAME" }
-
+  _inputPlaceholder() {
+    return 'VARIABLE_NAME'
+  }
 }

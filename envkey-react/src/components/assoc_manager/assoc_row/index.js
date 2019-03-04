@@ -1,1 +1,1 @@
-export {default} from './assoc_row'
+export { default } from './assoc_row'

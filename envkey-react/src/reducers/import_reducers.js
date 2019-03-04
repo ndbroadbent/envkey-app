@@ -1,4 +1,4 @@
-import {isClearSessionAction} from './helpers'
+import { isClearSessionAction } from './helpers'
 import R from 'ramda'
 import {
   IMPORT_ALL_ENVIRONMENTS,
@@ -7,22 +7,21 @@ import {
   QUEUE_ENVIRONMENT_IMPORT_FAILED,
   COMMIT_IMPORT_ACTIONS,
   CREATE_ENTRY,
-  UPDATE_ENTRY_VAL
-} from "actions"
+  UPDATE_ENTRY_VAL,
+} from 'actions'
 
-export const
-
-  importActionsPending = (state={}, action)=>{
-    if (isClearSessionAction(action)){
+export const importActionsPending = (state = {}, action) => {
+    if (isClearSessionAction(action)) {
       return {}
     }
 
-    switch(action.type){
-
+    switch (action.type) {
       case CREATE_ENTRY:
       case UPDATE_ENTRY_VAL:
-        if (action.meta.importAction){
-          return R.mergeWith(R.concat, state, {[action.meta.parentId]: [action]})
+        if (action.meta.importAction) {
+          return R.mergeWith(R.concat, state, {
+            [action.meta.parentId]: [action],
+          })
         } else {
           return state
         }
@@ -34,13 +33,12 @@ export const
         return state
     }
   },
-
-  didOnboardImport = (state={}, action)=>{
-    if (isClearSessionAction(action)){
+  didOnboardImport = (state = {}, action) => {
+    if (isClearSessionAction(action)) {
       return {}
     }
 
-    switch(action.type){
+    switch (action.type) {
       case IMPORT_ALL_ENVIRONMENTS:
         return R.assoc(action.meta.parentId, true, state)
 
@@ -48,15 +46,18 @@ export const
         return state
     }
   },
-
-  importErrors = (state={}, action)=>{
-    if (isClearSessionAction(action)){
+  importErrors = (state = {}, action) => {
+    if (isClearSessionAction(action)) {
       return {}
     }
 
-    switch(action.type){
+    switch (action.type) {
       case QUEUE_ENVIRONMENT_IMPORT_FAILED:
-        return R.assocPath([action.meta.parentId, action.meta.environment], action.payload, state)
+        return R.assocPath(
+          [action.meta.parentId, action.meta.environment],
+          action.payload,
+          state
+        )
 
       case QUEUE_ENVIRONMENT_IMPORT:
       case IMPORT_SINGLE_ENVIRONMENT:

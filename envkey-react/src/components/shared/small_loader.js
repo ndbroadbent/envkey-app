@@ -19,7 +19,11 @@ const svgString = `<svg version="1.1" id="Layer_1" xmlns="http://www.w3.org/2000
     </rect>
   </svg>`
 
-export default function (){
-  return <span className="small-loader"
-               dangerouslySetInnerHTML={{ __html: svgString }} />
+export default function() {
+  return (
+    <span
+      className="small-loader"
+      dangerouslySetInnerHTML={{ __html: svgString }}
+    />
+  )
 }

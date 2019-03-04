@@ -2,26 +2,23 @@ import axios from 'axios'
 import R from 'ramda'
 import axiosRetry from 'axios-retry'
 
-export const API_VERSION = "v1"
+export const API_VERSION = 'v1'
 
-const
-  opts =  {
-    baseURL: [process.env.API_HOST, API_VERSION].join("/"),
-    timeout: 30000
+const opts = {
+    baseURL: [process.env.API_HOST, API_VERSION].join('/'),
+    timeout: 30000,
   },
-
   defaultClient = axios.create(opts)
 
-axiosRetry(defaultClient, {retries: 3})
+axiosRetry(defaultClient, { retries: 3 })
 
-export const authenticatedClient = (auth={})=> {
+export const authenticatedClient = (auth = {}) => {
   const client = axios.create({
     ...opts,
-    headers: R.pick(["access-token", "uid", "client"], auth)
+    headers: R.pick(['access-token', 'uid', 'client'], auth),
   })
-  axiosRetry(client, {retries: 3})
+  axiosRetry(client, { retries: 3 })
   return client
 }
 
 export default defaultClient
-

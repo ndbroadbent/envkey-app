@@ -1,9 +1,9 @@
 import React from 'react'
 import R from 'ramda'
-import h from "lib/ui/hyperscript_with_helpers"
+import h from 'lib/ui/hyperscript_with_helpers'
 import { connect } from 'react-redux'
 import { Link } from 'react-router'
-import {loadInviteRequest, acceptInvite, resetAcceptInvite} from 'actions'
+import { loadInviteRequest, acceptInvite, resetAcceptInvite } from 'actions'
 import {
   getIsAuthenticating,
   getInviteParams,
@@ -13,85 +13,89 @@ import {
   getIsLoadingInvite,
   getLoadInviteError,
   getIsInvitee,
-  getInviteExistingUserInvalidPassphraseError
+  getInviteExistingUserInvalidPassphraseError,
 } from 'selectors'
 import PasswordInput from 'components/shared/password_input'
 import Spinner from 'components/shared/spinner'
-import {OnboardOverlay} from 'components/onboard'
+import { OnboardOverlay } from 'components/onboard'
 import PasswordCopy from 'components/shared/password_copy'
 
-const
-  initialPasswordState = ()=> ({
-    password: "",
+const initialPasswordState = () => ({
+    password: '',
     passwordValid: false,
     passwordScore: null,
-    passwordFeedback: null
+    passwordFeedback: null,
   }),
-  initialState = ()=> ({
-    emailVerificationCode: "",
-    encryptionCode: "",
-    ...initialPasswordState()
+  initialState = () => ({
+    emailVerificationCode: '',
+    encryptionCode: '',
+    ...initialPasswordState(),
   })
 
 class AcceptInvite extends React.Component {
-
-  constructor(props){
+  constructor(props) {
     super(props)
     this.state = initialState()
 
-    if (props.params.inviteToken){
+    if (props.params.inviteToken) {
       this.state.emailVerificationCode = props.params.inviteToken
     }
   }
 
   componentDidMount() {
-    if(this.refs.inviteToken && !this.state.emailVerificationCode){
+    if (this.refs.inviteToken && !this.state.emailVerificationCode) {
       this.refs.inviteToken.focus()
-    } else if (this.refs.encryptionToken){
+    } else if (this.refs.encryptionToken) {
       this.refs.encryptionToken.focus()
     }
   }
 
-  componentWillReceiveProps(nextProps){
-    if (!this.props.inviteExistingUserInvalidPassphraseError &&
-        nextProps.inviteExistingUserInvalidPassphraseError){
+  componentWillReceiveProps(nextProps) {
+    if (
+      !this.props.inviteExistingUserInvalidPassphraseError &&
+      nextProps.inviteExistingUserInvalidPassphraseError
+    ) {
       this.setState(initialPasswordState())
     }
   }
 
-  _onSubmitPassword(e){
+  _onSubmitPassword(e) {
     e.preventDefault()
-    this.props.onSubmitPassword(R.pick(["password"], this.state))
+    this.props.onSubmitPassword(R.pick(['password'], this.state))
   }
 
-  _onLoadInvite(e){
+  _onLoadInvite(e) {
     e.preventDefault()
-    const [identityHash, passphrase] = this.state.encryptionCode.split("_")
+    const [identityHash, passphrase] = this.state.encryptionCode.split('_')
     this.props.onLoadInvite({
       emailVerificationCode: this.state.emailVerificationCode,
       identityHash,
-      passphrase
+      passphrase,
     })
   }
 
-  _isNewUser(){
+  _isNewUser() {
     return this.props.inviteParams && !this.props.inviteParams.invitee.pubkey
   }
 
-  render(){
+  render() {
     return h(OnboardOverlay, [
       h.div([
-        h.h1([h.em("Accept Invitation")]),
-        h.div(".onboard-auth-form.accept-invite-form", [
+        h.h1([h.em('Accept Invitation')]),
+        h.div('.onboard-auth-form.accept-invite-form', [
           this._renderContent(),
-          this._renderBackLink()
-        ])
-      ])
+          this._renderBackLink(),
+        ]),
+      ]),
     ])
   }
 
-  _renderContent(){
-    if (this.props.inviteParamsVerified && !this.props.loadInviteError && !this.props.isLoadingInvite){
+  _renderContent() {
+    if (
+      this.props.inviteParamsVerified &&
+      !this.props.loadInviteError &&
+      !this.props.isLoadingInvite
+    ) {
       return this._renderPasswordForm()
     } else if (this.props.loadInviteError) {
       return this._renderLoadError()
@@ -100,128 +104,139 @@ class AcceptInvite extends React.Component {
     }
   }
 
-  _renderBackLink(){
-    return h(Link, {className: "back-link", to: "/home", onClick: ::this.props.onReset}, [
-      h.span(".img", "←"),
-      h.span("Back To Home")
-    ])
+  _renderBackLink() {
+    return h(
+      Link,
+      { className: 'back-link', to: '/home', onClick: ::this.props.onReset },
+      [h.span('.img', '←'), h.span('Back To Home')]
+    )
   }
 
-  _renderLoadInviteForm(){
-    return h.div(".load-invite-form", [
-
+  _renderLoadInviteForm() {
+    return h.div('.load-invite-form', [
       // h.p(".copy", "To accept an invitation, you need two tokens."),
 
-      h.form({onSubmit: ::this._onLoadInvite}, [
-
-        h.fieldset({className: "invite-token"}, [
+      h.form({ onSubmit: ::this._onLoadInvite }, [
+        h.fieldset({ className: 'invite-token' }, [
           h.p([
-            h.strong(".num", "1 "),
+            h.strong('.num', '1 '),
             h.span([
-            h.strong("Invite Token"),
-            ", received in an email from EnvKey <support@envkey.com>"
-            ])
+              h.strong('Invite Token'),
+              ', received in an email from EnvKey <support@envkey.com>',
+            ]),
           ]),
           h.input({
-            type: "password",
+            type: 'password',
             disabled: this.props.isLoadingInvite,
-            ref: "inviteToken",
-            placeholder: "Invite Token",
+            ref: 'inviteToken',
+            placeholder: 'Invite Token',
             required: true,
             value: this.state.emailVerificationCode,
-            onChange: e => this.setState({emailVerificationCode: e.target.value})
-          })
+            onChange: e =>
+              this.setState({ emailVerificationCode: e.target.value }),
+          }),
         ]),
 
-        h.fieldset({className: "encryption-token"}, [
+        h.fieldset({ className: 'encryption-token' }, [
           h.p([
-            h.strong(".num", "2 "),
+            h.strong('.num', '2 '),
             h.span([
-              h.strong("Encryption Token"),
-              ", received directly from the person who invited you"
-            ])
-
+              h.strong('Encryption Token'),
+              ', received directly from the person who invited you',
+            ]),
           ]),
           h.input({
-            type: "password",
-            ref: "encryptionToken",
-            placeholder: "Encryption Token",
+            type: 'password',
+            ref: 'encryptionToken',
+            placeholder: 'Encryption Token',
             disabled: this.props.isLoadingInvite,
             value: this.state.encryptionCode,
             required: true,
-            onChange: e => this.setState({encryptionCode: e.target.value})
-          })
+            onChange: e => this.setState({ encryptionCode: e.target.value }),
+          }),
         ]),
 
-        h.fieldset([
-          this._renderSubmitLoadInvite()
-        ])
-
-      ])
+        h.fieldset([this._renderSubmitLoadInvite()]),
+      ]),
     ])
   }
 
-  _renderLoadError(){
-    return h.div(".load-invite-error", [
-      h.p("This invitation is invalid or expired. EnvKey invitations are valid for 24 hours, and can only be loaded once."),
-      h.button({onClick: ()=> this.setState(initialState(), this.props.onReset)}, "Go Back")
+  _renderLoadError() {
+    return h.div('.load-invite-error', [
+      h.p(
+        'This invitation is invalid or expired. EnvKey invitations are valid for 24 hours, and can only be loaded once.'
+      ),
+      h.button(
+        { onClick: () => this.setState(initialState(), this.props.onReset) },
+        'Go Back'
+      ),
     ])
   }
 
-  _renderSubmitLoadInvite(){
-    if (this.props.isLoadingInvite){
+  _renderSubmitLoadInvite() {
+    if (this.props.isLoadingInvite) {
       return h(Spinner)
     } else {
-      return h.button("Next")
+      return h.button('Next')
     }
   }
 
-  _passwordPrompt(){
-    if (this._isNewUser()){
-      return "Invite verified. To sign in, set a strong master encryption passphrase."
+  _passwordPrompt() {
+    if (this._isNewUser()) {
+      return 'Invite verified. To sign in, set a strong master encryption passphrase.'
     } else {
-      if (this.props.inviteExistingUserInvalidPassphraseError){
-        return "Incorrect passphrase. Please try again."
+      if (this.props.inviteExistingUserInvalidPassphraseError) {
+        return 'Incorrect passphrase. Please try again.'
       } else {
-        return "Invite verified. To sign in, enter your master encryption passphrase."
+        return 'Invite verified. To sign in, enter your master encryption passphrase.'
       }
     }
   }
 
-  _renderPasswordForm(){
+  _renderPasswordForm() {
     return h.div([
-      h.form(".password-form", {
-        onSubmit: ::this._onSubmitPassword,
-      }, [
-        h.p(".copy", this._passwordPrompt()),
-        h.fieldset([
-          h(PasswordInput, {
-            confirm: this._isNewUser(),
-            disabled: this.props.isAuthenticating || this.props.isInvitee,
-            value: this.state.password,
-            validateStrength: this._isNewUser(),
-            valid: this.state.passwordValid,
-            score: this.state.passwordScore,
-            feedback: this.state.passwordFeedback,
-            strengthUserInputs: R.values(R.pick(["email", "firstName", "lastName"], this.props.inviteParams.invitee)),
-            onChange: (val, valid, score, feedback) => this.setState({
-              password: val,
-              passwordValid: valid,
-              passwordScore: score,
-              passwordFeedback: feedback
-            })
-          })
-        ]),
-        h.fieldset([this._renderSubmitPassword()])
-        // h.p(".msg-reset-account", ["Forgot your passphrase? ", h(Link, {to: "/reset_account"}, ["Reset your account."])])
-      ]),
+      h.form(
+        '.password-form',
+        {
+          onSubmit: ::this._onSubmitPassword,
+        },
+        [
+          h.p('.copy', this._passwordPrompt()),
+          h.fieldset([
+            h(PasswordInput, {
+              confirm: this._isNewUser(),
+              disabled: this.props.isAuthenticating || this.props.isInvitee,
+              value: this.state.password,
+              validateStrength: this._isNewUser(),
+              valid: this.state.passwordValid,
+              score: this.state.passwordScore,
+              feedback: this.state.passwordFeedback,
+              strengthUserInputs: R.values(
+                R.pick(
+                  ['email', 'firstName', 'lastName'],
+                  this.props.inviteParams.invitee
+                )
+              ),
+              onChange: (val, valid, score, feedback) =>
+                this.setState({
+                  password: val,
+                  passwordValid: valid,
+                  passwordScore: score,
+                  passwordFeedback: feedback,
+                }),
+            }),
+          ]),
+          h.fieldset([this._renderSubmitPassword()]),
+          // h.p(".msg-reset-account", ["Forgot your passphrase? ", h(Link, {to: "/reset_account"}, ["Reset your account."])])
+        ]
+      ),
 
-      (this._isNewUser() ? h(PasswordCopy) : null)
+      this._isNewUser() ? h(PasswordCopy) : null,
     ])
   }
 
-  _renderSubmitPassword(){
-    if(this.props.isAuthenticating || this.props.isInvitee){
+  _renderSubmitPassword() {
+    if (this.props.isAuthenticating || this.props.isInvitee) {
       return h(Spinner)
     } else {
       return <button disabled={!this.state.passwordValid}>Sign In</button>
@@ -236,11 +251,13 @@ const mapStateToProps = (state, ownProps) => {
     inviteParamsVerified: getInviteParamsVerified(state),
     inviteParamsInvalid: getInviteParamsInvalid(state),
     acceptInviteEmailError: getAcceptInviteEmailError(state),
-    inviteExistingUserInvalidPassphraseError: getInviteExistingUserInvalidPassphraseError(state),
+    inviteExistingUserInvalidPassphraseError: getInviteExistingUserInvalidPassphraseError(
+      state
+    ),
     isAuthenticating: getIsAuthenticating(state),
     isLoadingInvite: getIsLoadingInvite(state),
     loadInviteError: getLoadInviteError(state),
-    isInvitee: getIsInvitee(state)
+    isInvitee: getIsInvitee(state),
   }
 }
 
@@ -248,9 +265,11 @@ const mapDispatchToProps = dispatch => {
   return {
     onLoadInvite: p => dispatch(loadInviteRequest(p)),
     onSubmitPassword: p => dispatch(acceptInvite(p)),
-    onReset: ()=> dispatch(resetAcceptInvite())
+    onReset: () => dispatch(resetAcceptInvite()),
   }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(AcceptInvite)
-
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(AcceptInvite)

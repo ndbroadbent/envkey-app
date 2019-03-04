@@ -1,33 +1,28 @@
 import React from 'react'
 import { connect } from 'react-redux'
-import h from "lib/ui/hyperscript_with_helpers"
+import h from 'lib/ui/hyperscript_with_helpers'
 import R from 'ramda'
-import {secureRandomAlphanumeric} from 'lib/crypto'
+import { secureRandomAlphanumeric } from 'lib/crypto'
 import { parseMultiFormat } from 'lib/parse'
 import { importerPlaceholder } from 'lib/env/imports'
 import { importSingleEnvironment } from 'actions'
-import {
-  getApp,
-  getIsImportingEnvironment,
-  getImportErrors
-} from 'selectors'
+import { getApp, getIsImportingEnvironment, getImportErrors } from 'selectors'
 
 const initialState = {
-  val: "",
+  val: '',
   valid: false,
-  parsed: null
+  parsed: null,
 }
 
 class ImportEnv extends React.Component {
-
   constructor(props) {
     super(props)
     this.state = initialState
   }
 
-  componentWillReceiveProps(nextProps){
-    if (this.props.isSubmitting && !nextProps.isSubmitting){
-      if (!this.props.importError && nextProps.importError){
+  componentWillReceiveProps(nextProps) {
+    if (this.props.isSubmitting && !nextProps.isSubmitting) {
+      if (!this.props.importError && nextProps.importError) {
         this.setState(initialState)
       } else {
         this.props.onClose()
@@ -35,16 +30,16 @@ class ImportEnv extends React.Component {
     }
   }
 
-  _onSubmit(e){
+  _onSubmit(e) {
     e.preventDefault()
     this.props.onSubmit(this.state.parsed)
   }
 
-  _onChange(e){
+  _onChange(e) {
     const txt = e.target.value
     let val, valid, parsed
 
-    if(txt){
+    if (txt) {
       parsed = parseMultiFormat(txt.trim())
       valid = parsed != null
     } else {
@@ -52,73 +47,86 @@ class ImportEnv extends React.Component {
       valid = false
     }
 
-    this.setState({val, valid, parsed})
+    this.setState({ val, valid, parsed })
   }
 
-  _environmentTitle(){
-    return this.props.subEnv ? this.props.subEnv["@@__name__"] : this.props.environment
+  _environmentTitle() {
+    return this.props.subEnv
+      ? this.props.subEnv['@@__name__']
+      : this.props.environment
   }
 
-  render(){
-    return h.div(".env-modal.import-env", [
-      h.div(".bg", {onClick: this.props.onClose}),
+  render() {
+    return h.div('.env-modal.import-env', [
+      h.div('.bg', { onClick: this.props.onClose }),
       h.form([
         this._renderClose(),
-        <h3>Import To <em>{this._environmentTitle()}</em></h3>,
+        <h3>
+          Import To <em>{this._environmentTitle()}</em>
+        </h3>,
         h.textarea({
           disabled: this.props.isSubmitting,
           value: this.val,
           placeholder: importerPlaceholder(this._environmentTitle()),
-          onChange: ::this._onChange
+          onChange: ::this._onChange,
         }),
 
-        this._renderSubmit()
-      ])
+        this._renderSubmit(),
+      ]),
     ])
   }
 
-  _renderSubmit(){
-    if(this.props.isSubmitting){
-      return h.div(".actions", [
-        h.button({disabled: true}, ["Importing..."]),
-      ])
+  _renderSubmit() {
+    if (this.props.isSubmitting) {
+      return h.div('.actions', [h.button({ disabled: true }, ['Importing...'])])
     } else {
-      return h.div(".actions", [
-        h.button({
-          onClick: ::this._onSubmit,
-          disabled: !this.state.valid || !this.state.parsed
-        }, 'Import')
+      return h.div('.actions', [
+        h.button(
+          {
+            onClick: ::this._onSubmit,
+            disabled: !this.state.valid || !this.state.parsed,
+          },
+          'Import'
+        ),
       ])
     }
   }
 
-  _renderClose(){
-    return h.span(".close", {onClick: this.props.onClose}, "⟵")
+  _renderClose() {
+    return h.span('.close', { onClick: this.props.onClose }, '⟵')
   }
-
 }
 
 const mapStateToProps = (state, ownProps) => {
   return {
     ...ownProps,
-    isSubmitting: getIsImportingEnvironment(ownProps.app.id, ownProps.environment, state),
-    importError: getImportErrors(ownProps.app.id, state)
+    isSubmitting: getIsImportingEnvironment(
+      ownProps.app.id,
+      ownProps.environment,
+      state
+    ),
+    importError: getImportErrors(ownProps.app.id, state),
   }
 }
 
 const mapDispatchToProps = (dispatch, ownProps) => {
   return {
     onSubmit: parsed => {
-      const subEnvId = R.path(["subEnv", "@@__id__"], ownProps)
-      dispatch(importSingleEnvironment({
-        parsed,
-        subEnvId,
-        environment: ownProps.environment,
-        parentType: "app",
-        parentId: ownProps.app.id
-      }))
-    }
+      const subEnvId = R.path(['subEnv', '@@__id__'], ownProps)
+      dispatch(
+        importSingleEnvironment({
+          parsed,
+          subEnvId,
+          environment: ownProps.environment,
+          parentType: 'app',
+          parentId: ownProps.app.id,
+        })
+      )
+    },
   }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(ImportEnv)
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(ImportEnv)

@@ -9,18 +9,22 @@ var MultiSelectItem = React.createClass({
       visible: true,
       selected: false,
       text: '',
-      onClick: function() {}
+      onClick: function() {},
     }
   },
   render: function() {
-    return this.props.visible && <li
-      className={this.props.selected ? 'selected' : 'deselected'}
-      onClick={this.props.onClick}
-    >
-      <input type="checkbox" checked={this.props.selected} />
-      <span className="primary">{this.props.text}</span>
-    </li>
-  }
+    return (
+      this.props.visible && (
+        <li
+          className={this.props.selected ? 'selected' : 'deselected'}
+          onClick={this.props.onClick}
+        >
+          <input type="checkbox" checked={this.props.selected} />
+          <span className="primary">{this.props.text}</span>
+        </li>
+      )
+    )
+  },
 })
 
 var MultiSelect = React.createClass({
@@ -30,13 +34,13 @@ var MultiSelect = React.createClass({
       placeholder: 'Enter some filter text',
       onChange: function() {},
       onItemSelected: function() {},
-      onItemDeselected: function() {}
+      onItemDeselected: function() {},
     }
   },
   getInitialState: function() {
     return {
       selections: {},
-      filter: ''
+      filter: '',
     }
   },
   handleItemClick: function(item) {
@@ -47,21 +51,24 @@ var MultiSelect = React.createClass({
     this.setState({ filter: val })
   },
   escapeRegExp: function(str) {
-    return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, "\\$&");
+    return str.replace(/[\-\[\]\/\{\}\(\)\*\+\?\.\\\^\$\|]/g, '\\$&')
   },
   createItem: function(item) {
     // Filter item visibility based on the filter input
-    var regex = new RegExp('.*'+this.escapeRegExp(this.state.filter)+'.*', 'i')
-    var text = 'text' in item ? item.text
-             : 'name' in item ? item.name
-             : item.id
-    return <MultiSelectItem
-      key={item.id}
-      text={item.label || item.text}
-      onClick={this.handleItemClick.bind(this, item)}
-      visible={regex.test(text)}
-      selected={this.state.selections[item.id] ? true : false}
-    />
+    var regex = new RegExp(
+      '.*' + this.escapeRegExp(this.state.filter) + '.*',
+      'i'
+    )
+    var text = 'text' in item ? item.text : 'name' in item ? item.name : item.id
+    return (
+      <MultiSelectItem
+        key={item.id}
+        text={item.label || item.text}
+        onClick={this.handleItemClick.bind(this, item)}
+        visible={regex.test(text)}
+        selected={this.state.selections[item.id] ? true : false}
+      />
+    )
   },
   selectAll: function(event) {
     this.setSelected(this.props.items, true)
@@ -77,18 +84,16 @@ var MultiSelect = React.createClass({
     for (var i in items) {
       selections[items[i].id] = selected
 
-      if (selected)
-        this.props.onItemSelected(items[i])
-      else
-        this.props.onItemDeselected(items[i])
+      if (selected) this.props.onItemSelected(items[i])
+      else this.props.onItemDeselected(items[i])
     }
     this.setState({ selections: selections })
     this.props.onChange(selections)
   },
-  getSelected: function(){
+  getSelected: function() {
     var ids = []
-    for (var id in this.state.selections){
-      if(this.state.selections[id])ids.push(id)
+    for (var id in this.state.selections) {
+      if (this.state.selections[id]) ids.push(id)
     }
     return ids
   },
@@ -96,11 +101,15 @@ var MultiSelect = React.createClass({
   render: function() {
     return (
       <div className="multi-select">
-        <Filter onFilter={this.onFilter} value={this.state.filter} placeholder={this.props.placeholder || "Type here to filter..."} />
+        <Filter
+          onFilter={this.onFilter}
+          value={this.state.filter}
+          placeholder={this.props.placeholder || 'Type here to filter...'}
+        />
         <ul>{this.props.items.map(this.createItem)}</ul>
       </div>
     )
-  }
+  },
 })
 
 export default MultiSelect

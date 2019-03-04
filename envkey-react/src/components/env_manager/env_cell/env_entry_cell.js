@@ -12,15 +12,13 @@ const EditableRemovableCell = R.pipe(
 )(EditableEntryCell)
 
 class EnvEntryCell extends EditableRemovableCell {
-
-  _onRemove(){
+  _onRemove() {
     this.props.removeEntry(this.props.entryKey, this.props.subEnvId)
   }
 
-  _commit(){
+  _commit() {
     this.props.onCommitEntry(this.props.entryKey, this.state.inputVal)
   }
-
 }
 
 // Add on remove confirmable behavior

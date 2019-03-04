@@ -1,91 +1,82 @@
-import {isClearSessionAction} from './helpers'
+import { isClearSessionAction } from './helpers'
 import R from 'ramda'
 import {
   CREATE_ENTRY,
   UPDATE_ENTRY,
   REMOVE_ENTRY,
   UPDATE_ENTRY_VAL,
-
   ADD_SUB_ENV,
   REMOVE_SUB_ENV,
   RENAME_SUB_ENV,
-
   GENERATE_ENV_UPDATE_ID,
   CLEAR_PENDING_ENV_UPDATE,
-
   UPDATE_ENV_REQUEST,
   UPDATE_ENV_API_SUCCESS,
   UPDATE_ENV_SUCCESS,
   UPDATE_ENV_FAILED,
-
   GRANT_ENV_ACCESS,
   GRANT_ENV_ACCESS_FAILED,
   GRANT_ENV_ACCESS_SUCCESS,
-
   SOCKET_UPDATE_ENVS,
-
   FETCH_OBJECT_DETAILS_API_SUCCESS,
   FETCH_OBJECT_DETAILS_SUCCESS,
   FETCH_OBJECT_DETAILS_FAILED,
-
   ADD_ASSOC_REQUEST,
   ADD_ASSOC_SUCCESS,
   ADD_ASSOC_FAILED,
-
   REMOVE_ASSOC_REQUEST,
   REMOVE_ASSOC_SUCCESS,
   REMOVE_ASSOC_FAILED,
-
   REMOVE_OBJECT_REQUEST,
   REMOVE_OBJECT_SUCCESS,
   REMOVE_OBJECT_FAILED,
-
-  COMMIT_IMPORT_ACTIONS
-} from "actions"
+  COMMIT_IMPORT_ACTIONS,
+} from 'actions'
 import { isOutdatedEnvsResponse } from 'lib/actions'
 
-const
-
-  envActionsPendingTransformEnvReducer = (state, action)=>{
-    if(R.path(["meta", "queued"], action)){
+const envActionsPendingTransformEnvReducer = (state, action) => {
+    if (R.path(['meta', 'queued'], action)) {
       return state
     }
-    const {parentId, envUpdateId} = action.meta,
-          path = [parentId, envUpdateId],
-          queueAction = {...action, meta: {...action.meta, queued: true}}
+    const { parentId, envUpdateId } = action.meta,
+      path = [parentId, envUpdateId],
+      queueAction = { ...action, meta: { ...action.meta, queued: true } }
 
-    return R.path(path, state) ?
-      R.over(R.lensPath(path), R.concat([queueAction]), state) :
-      R.assocPath(path, [queueAction], state)
+    return R.path(path, state)
+      ? R.over(R.lensPath(path), R.concat([queueAction]), state)
+      : R.assocPath(path, [queueAction], state)
   },
+  envActionsPendingCommitImportReducer = (state, action) => {
+    const { parentId, envUpdateId } = action.meta,
+      path = [parentId, envUpdateId],
+      queueActions = action.payload.map(pendingAction => ({
+        ...pendingAction,
+        meta: { ...pendingAction.meta, importAction: false, queued: true },
+      }))
 
-  envActionsPendingCommitImportReducer = (state, action)=>{
-    const {parentId, envUpdateId} = action.meta,
-          path = [parentId, envUpdateId],
-          queueActions = action.payload.map(pendingAction => ({
-            ...pendingAction,
-            meta: {...pendingAction.meta, importAction: false, queued: true}
-          }))
-
-    return R.path(path, state) ?
-      R.over(R.lensPath(path), R.concat(queueActions), state) :
-      R.assocPath(path, queueActions, state)
+    return R.path(path, state)
+      ? R.over(R.lensPath(path), R.concat(queueActions), state)
+      : R.assocPath(path, queueActions, state)
   }
 
-export const
-
-  lastAddedEntry = (state = {}, action)=>{
-    if (isClearSessionAction(action)){
+export const lastAddedEntry = (state = {}, action) => {
+    if (isClearSessionAction(action)) {
       return {}
     }
 
-    switch(action.type){
+    switch (action.type) {
       case CREATE_ENTRY:
       case UPDATE_ENTRY:
-        if(action.meta.importAction)return state
+        if (action.meta.importAction) return state
 
-        const {meta: {parentId, timestamp}, payload: {entryKey, newKey}} = action,
-              res = action.type == UPDATE_ENTRY ? {entryKey: newKey, timestamp} : {entryKey, timestamp}
+        const {
+            meta: { parentId, timestamp },
+            payload: { entryKey, newKey },
+          } = action,
+          res =
+            action.type == UPDATE_ENTRY
+              ? { entryKey: newKey, timestamp }
+              : { entryKey, timestamp }
 
         return R.assoc(parentId, res)(state)
 
@@ -93,13 +84,12 @@ export const
         return state
     }
   },
-
-  envActionsPending = (state = {}, action)=>{
-    if (isClearSessionAction(action)){
+  envActionsPending = (state = {}, action) => {
+    if (isClearSessionAction(action)) {
       return {}
     }
 
-    switch(action.type){
+    switch (action.type) {
       case CREATE_ENTRY:
       case UPDATE_ENTRY:
       case REMOVE_ENTRY:
@@ -107,7 +97,7 @@ export const
       case ADD_SUB_ENV:
       case REMOVE_SUB_ENV:
       case RENAME_SUB_ENV:
-        if(action.meta.importAction){
+        if (action.meta.importAction) {
           return state
         } else {
           return envActionsPendingTransformEnvReducer(state, action)
@@ -127,15 +117,14 @@ export const
         return state
     }
   },
-
-  isRequestingEnvUpdate = (state = {}, action)=>{
-    switch(action.type){
+  isRequestingEnvUpdate = (state = {}, action) => {
+    switch (action.type) {
       case UPDATE_ENV_REQUEST:
         return R.assoc(action.meta.parentId, true, state)
 
       case UPDATE_ENV_SUCCESS:
       case UPDATE_ENV_FAILED:
-        if (isOutdatedEnvsResponse(action)){
+        if (isOutdatedEnvsResponse(action)) {
           return state
         } else {
           return R.dissoc(action.meta.parentId, state)
@@ -145,15 +134,14 @@ export const
         return state
     }
   },
-
-  isUpdatingOutdatedEnvs = (state = {}, action)=>{
-    if (isClearSessionAction(action)){
+  isUpdatingOutdatedEnvs = (state = {}, action) => {
+    if (isClearSessionAction(action)) {
       return {}
     }
 
-    switch(action.type){
+    switch (action.type) {
       case UPDATE_ENV_FAILED:
-        if (isOutdatedEnvsResponse(action)){
+        if (isOutdatedEnvsResponse(action)) {
           return R.assoc(action.meta.parentId, true, state)
         } else {
           return state
@@ -161,7 +149,7 @@ export const
 
       case FETCH_OBJECT_DETAILS_SUCCESS:
       case FETCH_OBJECT_DETAILS_FAILED:
-        if (action.meta.isOutdatedEnvsRequest){
+        if (action.meta.isOutdatedEnvsRequest) {
           return R.dissoc(action.meta.targetId, state)
         } else {
           return state
@@ -171,22 +159,21 @@ export const
         return state
     }
   },
-
-  isRebasingOutdatedEnvs = (state = {}, action)=>{
-    if (isClearSessionAction(action)){
+  isRebasingOutdatedEnvs = (state = {}, action) => {
+    if (isClearSessionAction(action)) {
       return {}
     }
 
-    switch(action.type){
+    switch (action.type) {
       case UPDATE_ENV_FAILED:
-        if (isOutdatedEnvsResponse(action)){
+        if (isOutdatedEnvsResponse(action)) {
           return R.assoc(action.meta.parentId, true, state)
         } else {
           return state
         }
 
       case UPDATE_ENV_REQUEST:
-        if (action.meta.isOutdatedEnvsRequest){
+        if (action.meta.isOutdatedEnvsRequest) {
           return R.dissoc(action.meta.parentId, state)
         } else {
           return state
@@ -196,59 +183,79 @@ export const
         return state
     }
   },
-
-  envUpdateId = (state = {}, action)=>{
-    if (isClearSessionAction(action)){
+  envUpdateId = (state = {}, action) => {
+    if (isClearSessionAction(action)) {
       return {}
     }
 
-    switch(action.type){
+    switch (action.type) {
       case GENERATE_ENV_UPDATE_ID:
         return R.assoc(action.meta.parentId, action.payload, state)
 
       case UPDATE_ENV_REQUEST:
-        return action.meta.forceEnvUpdateId ?
-          state :
-          R.assoc(action.meta.parentId, action.meta.nextEnvUpdateId, state)
+        return action.meta.forceEnvUpdateId
+          ? state
+          : R.assoc(action.meta.parentId, action.meta.nextEnvUpdateId, state)
 
       default:
         return state
     }
   },
-
-  isUpdatingEnv = (state = {}, action)=>{
-    if (isClearSessionAction(action)){
+  isUpdatingEnv = (state = {}, action) => {
+    if (isClearSessionAction(action)) {
       return {}
     }
 
-    if(action.meta && action.meta.importAction){
+    if (action.meta && action.meta.importAction) {
       return state
     }
-    switch(action.type){
+    switch (action.type) {
       case UPDATE_ENTRY_VAL:
-        return R.assocPath([action.meta.parentId, action.payload.entryKey, action.payload.environment], true, state)
+        return R.assocPath(
+          [
+            action.meta.parentId,
+            action.payload.entryKey,
+            action.payload.environment,
+          ],
+          true,
+          state
+        )
 
       case UPDATE_ENTRY:
-        return R.assocPath([action.meta.parentId, action.payload.entryKey, "key"], true, state)
+        return R.assocPath(
+          [action.meta.parentId, action.payload.entryKey, 'key'],
+          true,
+          state
+        )
 
       case REMOVE_ENTRY:
-        return R.assocPath([action.meta.parentId, action.payload.entryKey, "key"], true, state)
+        return R.assocPath(
+          [action.meta.parentId, action.payload.entryKey, 'key'],
+          true,
+          state
+        )
 
       case UPDATE_ENV_SUCCESS:
       case UPDATE_ENV_FAILED:
-        if (isOutdatedEnvsResponse(action)){
+        if (isOutdatedEnvsResponse(action)) {
           return state
         } else {
-          const updateActionTypes = [UPDATE_ENTRY_VAL, UPDATE_ENTRY, REMOVE_ENTRY],
-                dissocFns = R.pipe(
-                  R.filter(R.propSatisfies(t => updateActionTypes.includes(t),'type')),
-                  R.map(
-                    ({payload: {entryKey, environment}})=> R.pipe(
-                      R.dissocPath([action.meta.parentId, entryKey, environment]),
-                      R.dissocPath([action.meta.parentId, entryKey, "key"])
-                    )
-                  )
-                )(action.meta.envActionsPending)
+          const updateActionTypes = [
+              UPDATE_ENTRY_VAL,
+              UPDATE_ENTRY,
+              REMOVE_ENTRY,
+            ],
+            dissocFns = R.pipe(
+              R.filter(
+                R.propSatisfies(t => updateActionTypes.includes(t), 'type')
+              ),
+              R.map(({ payload: { entryKey, environment } }) =>
+                R.pipe(
+                  R.dissocPath([action.meta.parentId, entryKey, environment]),
+                  R.dissocPath([action.meta.parentId, entryKey, 'key'])
+                )
+              )
+            )(action.meta.envActionsPending)
 
           return dissocFns.length ? R.pipe(...dissocFns)(state) : state
         }
@@ -257,21 +264,26 @@ export const
         return state
     }
   },
-
-  isAddingSubEnv = (state = {}, action)=>{
-    switch(action.type){
+  isAddingSubEnv = (state = {}, action) => {
+    switch (action.type) {
       case ADD_SUB_ENV:
-        return R.assocPath([action.meta.parentId, action.payload.environment], true, state)
+        return R.assocPath(
+          [action.meta.parentId, action.payload.environment],
+          true,
+          state
+        )
 
       case UPDATE_ENV_SUCCESS:
       case UPDATE_ENV_FAILED:
-        if (isOutdatedEnvsResponse(action)){
+        if (isOutdatedEnvsResponse(action)) {
           return state
         } else {
           const dissocFns = R.pipe(
-                  R.filter(R.propEq("type", ADD_SUB_ENV)),
-                  R.map(({payload: {environment}})=> R.dissocPath([action.meta.parentId, environment])),
-                )(action.meta.envActionsPending)
+            R.filter(R.propEq('type', ADD_SUB_ENV)),
+            R.map(({ payload: { environment } }) =>
+              R.dissocPath([action.meta.parentId, environment])
+            )
+          )(action.meta.envActionsPending)
 
           return dissocFns.length ? R.pipe(...dissocFns)(state) : state
         }
@@ -280,23 +292,30 @@ export const
         return state
     }
   },
-
-  isUpdatingSubEnv = (state = {}, action)=>{
-    switch(action.type){
+  isUpdatingSubEnv = (state = {}, action) => {
+    switch (action.type) {
       case REMOVE_SUB_ENV:
       case RENAME_SUB_ENV:
-        return R.assocPath([action.meta.parentId, action.payload.environment, action.payload.id], true, state)
+        return R.assocPath(
+          [action.meta.parentId, action.payload.environment, action.payload.id],
+          true,
+          state
+        )
 
       case UPDATE_ENV_SUCCESS:
       case UPDATE_ENV_FAILED:
-        if (isOutdatedEnvsResponse(action)){
+        if (isOutdatedEnvsResponse(action)) {
           return state
         } else {
           const updateActionTypes = [REMOVE_SUB_ENV, RENAME_SUB_ENV],
-                dissocFns = R.pipe(
-                  R.filter(R.propSatisfies(t => updateActionTypes.includes(t),'type')),
-                  R.map(({payload: {environment, id}})=> R.dissocPath([action.meta.parentId, environment, id])),
-                )(action.meta.envActionsPending)
+            dissocFns = R.pipe(
+              R.filter(
+                R.propSatisfies(t => updateActionTypes.includes(t), 'type')
+              ),
+              R.map(({ payload: { environment, id } }) =>
+                R.dissocPath([action.meta.parentId, environment, id])
+              )
+            )(action.meta.envActionsPending)
 
           return dissocFns.length ? R.pipe(...dissocFns)(state) : state
         }
@@ -305,28 +324,33 @@ export const
         return state
     }
   },
-
-  isCreatingEnvEntry = (state = {}, action)=>{
-    if (isClearSessionAction(action)){
+  isCreatingEnvEntry = (state = {}, action) => {
+    if (isClearSessionAction(action)) {
       return {}
     }
 
-    if(action.meta && action.meta.importAction){
+    if (action.meta && action.meta.importAction) {
       return state
     }
-    switch(action.type){
+    switch (action.type) {
       case CREATE_ENTRY:
-        return R.assocPath([action.meta.parentId, action.payload.entryKey], true, state)
+        return R.assocPath(
+          [action.meta.parentId, action.payload.entryKey],
+          true,
+          state
+        )
 
       case UPDATE_ENV_SUCCESS:
       case UPDATE_ENV_FAILED:
-        if (isOutdatedEnvsResponse(action)){
+        if (isOutdatedEnvsResponse(action)) {
           return state
         } else {
           const dissocFns = R.pipe(
-                  R.filter(R.propEq('type', CREATE_ENTRY)),
-                  R.map(({payload: {entryKey}})=> R.dissocPath([action.meta.parentId, entryKey]))
-                )(action.meta.envActionsPending)
+            R.filter(R.propEq('type', CREATE_ENTRY)),
+            R.map(({ payload: { entryKey } }) =>
+              R.dissocPath([action.meta.parentId, entryKey])
+            )
+          )(action.meta.envActionsPending)
 
           return dissocFns.length ? R.pipe(...dissocFns)(state) : state
         }
@@ -335,17 +359,16 @@ export const
         return state
     }
   },
-
-  isGrantingEnvAccess = (state = {}, action)=>{
-    if (isClearSessionAction(action)){
+  isGrantingEnvAccess = (state = {}, action) => {
+    if (isClearSessionAction(action)) {
       return {}
     }
 
-    switch(action.type){
+    switch (action.type) {
       case GRANT_ENV_ACCESS:
         const userIds = R.pluck('userId', action.payload)
         return userIds.reduce(
-          (acc, userId)=> R.assoc(userId, true, acc),
+          (acc, userId) => R.assoc(userId, true, acc),
           state
         )
 
@@ -357,9 +380,3 @@ export const
         return state
     }
   }
-
-
-
-
-
-
